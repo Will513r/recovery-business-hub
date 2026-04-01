@@ -4,7 +4,7 @@ const path = require("path");
 
 // 2. Initialize the application
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 3. Set EJS as our Template Engine
 app.set("view engine", "ejs");
