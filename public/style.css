@@ -294,3 +294,77 @@ footer {
     color: white;
     margin-top: 4rem;
 }
+
+/* --- 12. Application Form Styles --- */
+.form-container {
+    max-width: 600px;
+    margin: 4rem auto;
+    padding: 2rem;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.form-container h2 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.form-container p {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.business-form .form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.business-form label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+}
+
+.business-form input,
+.business-form select,
+.business-form textarea {
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.business-form input:focus,
+.business-form select:focus,
+.business-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(103, 58, 183, 0.3);
+}
+
+.business-form small {
+    color: #888;
+    margin-top: 0.3rem;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--button-color);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-submit:hover {
+    background-color: var(--button-hover);
+}

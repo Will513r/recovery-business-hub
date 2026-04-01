@@ -15,6 +15,9 @@ app.set("views", path.join(__dirname, "views"));
 // 4. Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
+// Add this middleware so Express can read form data
+app.use(express.urlencoded({ extended: true }));
+
 // 5. Set up the MySQL Database Connection using Environment Variables
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -57,6 +60,42 @@ app.get('/', (req, res) => {
         }
         
         res.render('index', { businesses: results });
+    });
+});
+
+// --- NEW ROUTE: Show the "Add a Business" form page ---
+app.get('/add-business', (req, res) => {
+    res.render('add-business');
+});
+
+// --- NEW ROUTE: Process the form submission ---
+app.post('/add-business', (req, res) => {
+    // Extract the data from the submitted form
+    const { name, category, address, phone, logo, description } = req.body;
+
+    // We will force 'pending' status and 'free' tier for all new submissions
+    const status = 'pending';
+    const tier = 'free';
+
+    // Create the SQL query to insert the data
+    const query = `
+        INSERT INTO businesses (name, category, description, tier, status, logo, address, phone) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    // The question marks above are replaced by these variables safely
+    const values = [name, category, description, tier, status, logo, address, phone];
+
+    db.query(query, values, (err, results) => {
+        if (err) {
+            console.error('Error saving new business:', err.message);
+            res.status(500).send('Error submitting your application.');
+            return;
+        }
+        
+        // If successful, redirect the user back to the homepage
+        console.log("New business application received!");
+        res.redirect('/');
     });
 });
 
