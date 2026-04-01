@@ -1,56 +1,52 @@
-// 1. Import express and path
+// 1. Import express, path, and our new mysql2 package
 const express = require("express");
 const path = require("path");
+const mysql = require("mysql2");
 
 // 2. Initialize the application
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // 3. Set EJS as our Template Engine
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views")); // Tells Express where our .ejs files live
+app.set("views", path.join(__dirname, "views"));
 
-// 4. Serve static files (like our CSS) from the 'public' folder
+// 4. Serve static files from the 'public' folder
 app.use(express.static(path.join(__dirname, "public")));
 
-// 5. Create some dummy data (simulating a database)
-const businesses = [
-    {
-        id: 1,
-        name: "Second Chance Cafe",
-        category: "Food & Dining",
-        description: "A cozy, recovery-owned coffee shop offering the best pastries in town.",
-        isPremium: true,
-        logo: "https://placehold.co/100x100/673AB7/FFF?text=SCC",
-        address: "123 Main St, Richmond, IN 47374",
-        phone: "(765) 555-0101"
-    },
-    {
-        id: 2,
-        name: "Sober Steps Landscaping",
-        category: "Home Services",
-        description: "Reliable and professional lawn care and landscaping services.",
-        isPremium: false,
-        logo: "https://placehold.co/100x100/4CAF50/FFF?text=SSL",
-        address: "456 Oak Ln, Richmond, IN 47374",
-        phone: "(765) 555-0202"
-    },
-    {
-        id: 3,
-        name: "New Beginnings Auto Repair",
-        category: "Automotive",
-        description: "Honest and affordable car maintenance and repair.",
-        isPremium: true,
-        logo: "https://placehold.co/100x100/FF9800/FFF?text=NBA",
-        address: "789 Garage Blvd, Richmond, IN 47374",
-        phone: "(765) 555-0303"
-    }
-];
+// 5. Set up the MySQL Database Connection
+// Replace these placeholders with your actual database details!
+const db = mysql.createConnection({
+  host: "localhost", // Or your Hostinger IP address
+  user: "root", // Your MySQL username
+  password: "password", // Your MySQL password
+  database: "recovery_hub", // The name of your database
+});
 
-// 6. Update our route to render the EJS file and pass it our data
+// Connect to the database
+db.connect((err) => {
+  if (err) {
+    console.error("Error connecting to the database:", err.message);
+    return;
+  }
+  console.log("Successfully connected to the MySQL database!");
+});
+
+// 6. Update our route to fetch data from MySQL
 app.get("/", (req, res) => {
-  // This tells Express to load 'views/index.ejs' and send it the 'businesses' array
-  res.render("index", { businesses: businesses });
+  // This tells MySQL to select everything from a table named "businesses"
+  const query = "SELECT * FROM businesses";
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Database query error:", err.message);
+      res.status(500).send("Error retrieving businesses from the database.");
+      return;
+    }
+
+    // Pass the database results to our EJS template
+    res.render("index", { businesses: results });
+  });
 });
 
 // 7. Start the server
