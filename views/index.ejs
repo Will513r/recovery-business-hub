@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Business Hub | Directory</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <header>
+        <nav class="navbar">
+            <div class="logo">Recovery Business Hub</div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#add-business" class="btn-primary">Add a Business</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Support Businesses in Recovery</h1>
+        <p>Find, highlight, and support small businesses owned and operated by individuals in recovery.</p>
+        
+        <form class="search-bar">
+            <input type="text" placeholder="Search for a business or service...">
+            <button type="submit">Search</button>
+        </form>
+    </section>
+
+    <main class="directory-container">
+        
+        <aside class="filters">
+            <h3>Filter by Category</h3>
+            <ul>
+                <li><label><input type="checkbox"> Food & Dining</label></li>
+                
+                <li>
+                    <label><input type="checkbox"> Home Services</label>
+                    <ul class="subcategories">
+                        <li><label><input type="checkbox"> Landscaping</label></li>
+                        <li><label><input type="checkbox"> HVAC</label></li>
+                        <li><label><input type="checkbox"> Plumbing</label></li>
+                        <li><label><input type="checkbox"> Electrical</label></li>
+                         <li><label><input type="checkbox"> Concrete</label></li>
+                          <li><label><input type="checkbox"> Construction</label></li>
+                    </ul>
+                </li>
+                
+                <li><label><input type="checkbox"> Retail</label></li>
+                <li><label><input type="checkbox"> Consulting</label></li>
+            </ul>
+        </aside>
+
+        <section class="listings">
+            <h2>Featured Businesses</h2>
+            
+           <% businesses.forEach(function(business) { %>
+                
+                <article class="business-card <%= business.isPremium ? 'premium-listing' : 'basic-listing' %>">
+                    <div class="card-content">
+                        
+                        <% if (business.isPremium) { %>
+                            <span class="badge">Premium</span>
+                        <% } %>
+                        
+                        <div class="card-header">
+                            <img src="<%= business.logo %>" alt="<%= business.name %> Logo" class="business-logo">
+                            <h3><%= business.name %></h3>
+                        </div>
+
+                        <p class="category"><strong>Category:</strong> <%= business.category %></p>
+                        
+                        <div class="contact-info">
+                            <p>📍 <%= business.address %></p>
+                            <p>📞 <%= business.phone %></p>
+                        </div>
+
+                        <p class="description"><%= business.description %></p>
+                        <a href="#" class="btn-secondary">View Profile</a>
+                    </div>
+                </article>
+
+            <% }); %>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Recovery Business Hub. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
