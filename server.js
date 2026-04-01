@@ -1,36 +1,38 @@
-// 1. Import express, path, and our new mysql2 package
+// 1. Import packages
+require("dotenv").config(); // Loads our hidden passwords from the .env file
 const express = require("express");
 const path = require("path");
 const mysql = require("mysql2");
 
 // 2. Initialize the application
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 3. Set EJS as our Template Engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// 4. Serve static files from the 'public' folder
+// 4. Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// 5. Set up the MySQL Database Connection
-// Replace these placeholders with your actual database details!
+// 5. Set up the MySQL Database Connection using Environment Variables
 const db = mysql.createConnection({
-  host: "localhost", // Or your Hostinger IP address
-  user: "root", // Your MySQL username
-  password: "password", // Your MySQL password
-  database: "recovery_hub", // The name of your database
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
 });
 
 // Connect to the database
 db.connect((err) => {
   if (err) {
-    console.error("Error connecting to the database:", err.message);
+    console.error("Error connecting to the remote database:", err.message);
     return;
   }
-  console.log("Successfully connected to the MySQL database!");
+  console.log("Successfully connected to the Hostinger MySQL database!");
 });
+
+// ... Keep the rest of your routes (app.get) and app.listen unchanged below this line ...
 
 // 6. Update our route to fetch data from MySQL
 app.get("/", (req, res) => {
