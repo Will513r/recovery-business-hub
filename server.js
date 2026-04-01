@@ -18,6 +18,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // 5. Set up the MySQL Database Connection using Environment Variables
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
@@ -34,21 +35,30 @@ db.connect((err) => {
 
 // ... Keep the rest of your routes (app.get) and app.listen unchanged below this line ...
 
-// 6. Update our route to fetch data from MySQL
-app.get("/", (req, res) => {
-  // This tells MySQL to select everything from a table named "businesses"
-  const query = "SELECT * FROM businesses";
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Database query error:", err.message);
-      res.status(500).send("Error retrieving businesses from the database.");
-      return;
-    }
-
-    // Pass the database results to our EJS template
-    res.render("index", { businesses: results });
-  });
+// 6. Update our route to fetch data from MySQL with filtering and sorting
+app.get('/', (req, res) => {
+    // Only select 'approved' businesses. 
+    // Order them: premium (1) first, paid (2) second, free (3) last.
+    const query = `
+        SELECT * FROM businesses 
+        WHERE status = 'approved' 
+        ORDER BY 
+            CASE tier 
+                WHEN 'premium' THEN 1 
+                WHEN 'paid' THEN 2 
+                WHEN 'free' THEN 3 
+            END ASC
+    `;
+    
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Database query error:', err.message);
+            res.status(500).send('Error retrieving businesses from the database.');
+            return;
+        }
+        
+        res.render('index', { businesses: results });
+    });
 });
 
 // 7. Start the server

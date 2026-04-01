@@ -58,11 +58,13 @@
             
            <% businesses.forEach(function(business) { %>
                 
-                <article class="business-card <%= business.isPremium ? 'premium-listing' : 'basic-listing' %>">
+                <article class="business-card tier-<%= business.tier %>">
                     <div class="card-content">
                         
-                        <% if (business.isPremium) { %>
-                            <span class="badge">Premium</span>
+                        <% if (business.tier === 'premium') { %>
+                            <span class="badge badge-premium">Premium</span>
+                        <% } else if (business.tier === 'paid') { %>
+                            <span class="badge badge-paid">Featured</span>
                         <% } %>
                         
                         <div class="card-header">

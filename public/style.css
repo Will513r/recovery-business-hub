@@ -252,11 +252,26 @@ header {
     color: var(--text-main);
 }
 
-/* --- 9. Premium Listing Highlights --- */
-.premium-listing {
+/* --- 9. Tiered Listing Highlights --- */
+/* Premium Tier */
+.tier-premium {
     border: 2px solid var(--accent-color); 
     background-color: var(--accent-bg); 
 }
+.badge-premium {
+    background-color: var(--accent-color); 
+}
+
+/* Paid Tier (In-between) */
+.tier-paid {
+    border: 1px solid var(--button-color); 
+    background-color: #fffaf0; /* Very light orange/warm background */
+}
+.badge-paid {
+    background-color: var(--button-color); 
+}
+
+/* Free Tier just uses the default .business-card styling! */
 
 .badge {
     position: absolute;
