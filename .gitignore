@@ -1,3 +1,5 @@
 node_modules/
 .env
-local-config.php
+uploads/*
+!uploads/index.php
+error_log

@@ -1,0 +1,12 @@
+# 1. Target all search engine bots
+User-agent: *
+
+# 2. Allow crawling of the main website
+Allow: /
+
+# 3. Disallow access to the admin area and sensitive files
+Disallow: /admin
+Disallow: /uploads/.htaccess
+
+# 4. Point bots to the dynamic XML sitemap
+Sitemap: https://www.recoverybusinesshub.com/sitemap.xml
