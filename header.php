@@ -12,7 +12,7 @@ $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
 $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?'));
 ?>
 <!DOCTYPE html>
-<!-- deployed 2026-07-05 20:33 -->
+<!-- deployed 2026-07-05 20:48 -->
 <html lang="en">
 
 <head>
@@ -35,6 +35,10 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
     <?php if (!empty($env_vars['ADSENSE_PUB_ID'])): ?>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?php echo htmlspecialchars($env_vars['ADSENSE_PUB_ID']); ?>" crossorigin="anonymous"></script>
     <?php endif; ?>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
     <link rel="stylesheet" href="/style.css">
     <link rel="canonical" href="<?php echo $current_url; ?>">
@@ -73,9 +77,14 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
 
     <header>
         <nav class="navbar">
-            <a href="/" class="logo" style="text-decoration: none; display: flex; align-items: center;">
-                <img src="/Recovery_Business_Hub_Logo.webp" alt="Recovery Business Hub"
-                    width="180" height="45" style="max-height: 45px; width: auto;">
+            <a href="/" class="logo" aria-label="Recovery Business Hub — Home">
+                <!-- Inline SVG so it renders in the site's Montserrat font -->
+                <svg width="230" height="46" viewBox="0 0 320 64" role="img" aria-hidden="true" focusable="false">
+                    <rect x="3.5" y="7.5" width="49" height="49" rx="12" fill="#FFFFFF" stroke="#0C1B33" stroke-width="3"/>
+                    <text x="28" y="45" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="32" fill="#1766C2">R</text>
+                    <text x="68" y="30" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="20" fill="#0C1B33">RECOVERY</text>
+                    <text x="68" y="50" font-family="Montserrat, Arial, sans-serif" font-weight="600" font-size="14" letter-spacing="3" fill="#1766C2">BUSINESS HUB</text>
+                </svg>
             </a>
 
             <button class="menu-toggle" aria-label="Open Navigation Menu">☰</button>
