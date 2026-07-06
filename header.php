@@ -12,6 +12,7 @@ $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
 $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?'));
 ?>
 <!DOCTYPE html>
+<!-- deployed 2026-07-05 19:59 -->
 <html lang="en">
 
 <head>
