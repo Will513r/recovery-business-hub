@@ -53,10 +53,24 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_
         $stmt->execute();
         $stmt->close();
     } elseif ($action === 'delete') {
+        $logo_to_delete = null;
+        $logo_stmt = $conn->prepare("SELECT logo FROM businesses WHERE id = ?");
+        $logo_stmt->bind_param("i", $business_id);
+        $logo_stmt->execute();
+        $logo_result = $logo_stmt->get_result();
+        if ($logo_row = $logo_result->fetch_assoc()) {
+            $logo_to_delete = $logo_row['logo'];
+        }
+        $logo_stmt->close();
+
         $stmt = $conn->prepare("DELETE FROM businesses WHERE id = ?");
         $stmt->bind_param("i", $business_id);
         $stmt->execute();
         $stmt->close();
+
+        if (!empty($logo_to_delete) && strpos($logo_to_delete, 'uploads/') === 0 && file_exists($logo_to_delete)) {
+            unlink($logo_to_delete);
+        }
     } elseif ($action === 'verify') {
         $stmt = $conn->prepare("UPDATE businesses SET is_verified = 1 WHERE id = ?");
         $stmt->bind_param("i", $business_id);
@@ -182,7 +196,7 @@ include 'header.php';
         $offset = ($page - 1) * $limit; // Calculate where to start pulling data
 
         // Add LIMIT and OFFSET to the SQL query
-        $sql = "SELECT * FROM businesses $admin_where_sql ORDER BY CASE status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 WHEN 'rejected' THEN 3 END, created_at DESC LIMIT ? OFFSET ?";
+        $sql = "SELECT * FROM businesses $admin_where_sql ORDER BY CASE status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 WHEN 'rejected' THEN 3 ELSE 4 END, created_at DESC LIMIT ? OFFSET ?";
 
         // Securely bind the limit and offset variables to prevent SQL injection
         $admin_params[] = $limit;

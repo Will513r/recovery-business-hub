@@ -34,9 +34,10 @@ if (!empty($search)) {
 if (!empty($selected_categories) && is_array($selected_categories)) {
     $cat_conditions = [];
     foreach ($selected_categories as $cat) {
-        $cat_conditions[] = "JSON_CONTAINS(b.category, ?)";
+        $cat_conditions[] = "(CASE WHEN JSON_VALID(b.category) THEN JSON_CONTAINS(b.category, ?) ELSE b.category = ? END)";
         $params[] = '"' . $cat . '"';
-        $types .= "s";
+        $params[] = $cat;
+        $types .= "ss";
     }
     $where_clauses[] = "(" . implode(" OR ", $cat_conditions) . ")";
 }
@@ -64,8 +65,9 @@ $sql = "SELECT b.*, AVG(r.rating) as avg_rating, COUNT(r.rating) as review_count
             CASE b.tier 
                 WHEN 'premium' THEN 1 
                 WHEN 'paid' THEN 2 
-                WHEN 'free' THEN 3 
-            END ASC, 
+                WHEN 'free' THEN 3
+                ELSE 4
+            END ASC,
             b.created_at DESC 
         LIMIT ? OFFSET ?";
 

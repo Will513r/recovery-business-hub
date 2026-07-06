@@ -33,12 +33,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $slug = strtolower(trim($name)); // Make lowercase and remove extra spaces
     $slug = preg_replace('/[^a-z0-9-]/', '-', $slug); // Replace special characters with hyphens
     $slug = preg_replace('/-+/', "-", $slug); // Remove multiple consecutive hyphens
+    $slug = trim($slug, '-'); // Trim leading/trailing hyphens
+    if ($slug === '' || preg_match('/^-+$/', $slug)) {
+        $slug = 'business'; // Fallback if nothing usable was left
+    }
+
+    // Make sure the slug is unique in the database, appending -2, -3, etc. if taken
+    $base_slug = $slug;
+    $suffix = 2;
+    $slug_check = $conn->prepare("SELECT id FROM businesses WHERE slug = ?");
+    if ($slug_check) {
+        while ($suffix <= 50) {
+            $slug_check->bind_param("s", $slug);
+            $slug_check->execute();
+            $slug_check->store_result();
+            $taken = $slug_check->num_rows > 0;
+            $slug_check->free_result();
+            if (!$taken) {
+                break;
+            }
+            $slug = $base_slug . '-' . $suffix;
+            $suffix++;
+        }
+        // Still taken after 50 numeric tries: fall back to a random suffix
+        if ($suffix > 50) {
+            $slug_check->bind_param("s", $slug);
+            $slug_check->execute();
+            $slug_check->store_result();
+            $taken = $slug_check->num_rows > 0;
+            $slug_check->free_result();
+            if ($taken) {
+                $slug = $base_slug . '-' . bin2hex(random_bytes(2));
+            }
+        }
+        $slug_check->close();
+    }
 
     // Process categories array
     $selected_categories = $_POST['categories'] ?? [];
     if (!is_array($selected_categories)) {
         $selected_categories = [];
     }
+    // Drop any submitted category that isn't in our known list
+    $selected_categories = array_values(array_intersect($selected_categories, $categories));
     $category_json = json_encode($selected_categories);
 
     $address = $_POST['address'] ?? '';
@@ -62,41 +99,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Grab the tier from the form, default to free
     $tier = $_POST['tier'] ?? 'free';
+    if (!in_array($tier, ['free', 'paid', 'premium'], true)) {
+        $tier = 'free';
+    }
     $status = 'pending';
 
-    $stmt = $conn->prepare("INSERT INTO businesses (name, slug, category, description, tier, status, logo, address, city, state, phone, email, website, founder_story, hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    if ($stmt) {
-        $stmt->bind_param("sssssssssssssss", $name, $slug, $category_json, $description, $tier, $status, $logo_path, $address, $city, $state, $phone, $email, $website, $founder_story, $hours_json);
-
-        if ($stmt->execute()) {
-            // SECURITY: Strip newlines to prevent Email Header Injection
-            $safe_name_for_email = str_replace(["\r", "\n", "%0a", "%0d"], '', $name);
-
-            // Send email notification
-            $to = 'recoverybusinesshub@gmail.com';
-            $subject = 'New Business Application: ' . $safe_name_for_email;
-            $email_body = "Great news! A new business applied.\n\nName: $name\nTier: $tier\n\nLogin to approve: https://www.recoverybusinesshub.com/admin.php";
-            $headers = "From: admin@recoverybusinesshub.com";
-            mail($to, $subject, $email_body, $headers);
-
-            // --- BULLETPROOF STRIPE REDIRECT LOGIC ---
-            if ($tier === 'paid') {
-                header("Location: " . STRIPE_PAID_URL);
-                exit;
-            } elseif ($tier === 'premium') {
-                header("Location: " . STRIPE_PREMIUM_URL);
-                exit;
-            } else {
-                // Free tier gets standard on-page success message
-                $message = "<p style='color: var(--accent-color); font-weight: bold; text-align: center;'>Application submitted successfully! It is pending review.</p>";
-            }
-        } else {
-            $message = "<p style='color: red; text-align: center;'>Error saving application. Please try again.</p>";
-        }
-        $stmt->close();
+    // SERVER-SIDE VALIDATION: reject bad input and enforce field length limits
+    $name_len = strlen(trim($name));
+    $description_len = strlen(trim($description));
+    if ($name_len < 3 || $name_len > 100) {
+        $message = "<p style='color: red; text-align: center;'>Business name must be between 3 and 100 characters.</p>";
+    } elseif ($description_len < 30 || $description_len > 3000) {
+        $message = "<p style='color: red; text-align: center;'>Business description must be between 30 and 3000 characters.</p>";
     } else {
-        $message = "<p style='color: red; text-align: center;'>Database error: Could not prepare statement.</p>";
+        if (!in_array($state, $states_list, true)) {
+            $state = '';
+        }
+        $phone = substr($phone, 0, 30);
+        $city = substr($city, 0, 100);
+        $address = substr($address, 0, 100);
+
+        $stmt = $conn->prepare("INSERT INTO businesses (name, slug, category, description, tier, status, logo, address, city, state, phone, email, website, founder_story, hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        if ($stmt) {
+            $stmt->bind_param("sssssssssssssss", $name, $slug, $category_json, $description, $tier, $status, $logo_path, $address, $city, $state, $phone, $email, $website, $founder_story, $hours_json);
+
+            if ($stmt->execute()) {
+                // SECURITY: Strip newlines to prevent Email Header Injection
+                $safe_name_for_email = str_replace(["\r", "\n", "%0a", "%0d"], '', $name);
+
+                // Send email notification
+                $to = 'recoverybusinesshub@gmail.com';
+                $subject = 'New Business Application: ' . $safe_name_for_email;
+                $email_body = "Great news! A new business applied.\n\nName: $name\nTier: $tier\n\nNOTE: If tier is paid or premium, confirm the subscription exists in Stripe before approving.\n\nLogin to approve: https://www.recoverybusinesshub.com/admin.php";
+                $headers = "From: admin@recoverybusinesshub.com";
+                mail($to, $subject, $email_body, $headers);
+
+                // --- BULLETPROOF STRIPE REDIRECT LOGIC ---
+                if ($tier === 'paid') {
+                    header("Location: " . STRIPE_PAID_URL);
+                    exit;
+                } elseif ($tier === 'premium') {
+                    header("Location: " . STRIPE_PREMIUM_URL);
+                    exit;
+                } else {
+                    // Free tier gets standard on-page success message
+                    $message = "<p style='color: var(--accent-color); font-weight: bold; text-align: center;'>Application submitted successfully! It is pending review.</p>";
+                }
+            } else {
+                $message = "<p style='color: red; text-align: center;'>Error saving application. Please try again.</p>";
+            }
+            $stmt->close();
+        } else {
+            $message = "<p style='color: red; text-align: center;'>Database error: Could not prepare statement.</p>";
+        }
     }
 }
 

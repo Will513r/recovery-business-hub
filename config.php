@@ -1,6 +1,9 @@
 <?php
 // config.php
-session_start(); // Added to support your CSRF token functions at the bottom
+// Guarded so pages that already called session_start() don't emit notices
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // --- LOAD ENVIRONMENT VARIABLES ---
 // A simple loader for raw PHP environments (like basic Hostinger setups).

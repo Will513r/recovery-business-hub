@@ -131,7 +131,7 @@ if ($business) {
         "image" => !empty($business['logo']) ? "https://www.recoverybusinesshub.com/" . ltrim($business['logo'], '/') : "https://www.recoverybusinesshub.com/Recovery_Business_Hub_Logo.png",
         "description" => strip_tags($business['description']),
         "telephone" => $business['phone'],
-        "url" => !empty($business['website']) ? $business['website'] : "https://www.recoverybusinesshub.com/profile.php?id=" . $business_id
+        "url" => (in_array($business['tier'], ['paid', 'premium']) && !empty($business['website'])) ? $business['website'] : "https://www.recoverybusinesshub.com/profile.php?id=" . $business_id
     ];
 
     // Add Address to Schema if available
@@ -250,7 +250,7 @@ include 'header.php';
                             aria-label="Call <?php echo htmlspecialchars($business['name']); ?>"
                             class="btn-primary" style="background-color: var(--button-color);">Call Now</a>
 
-                        <?php if (!empty($business['website'])): ?>
+                        <?php if (in_array($business['tier'], ['paid', 'premium']) && !empty($business['website'])): ?>
                             <a href="<?php echo htmlspecialchars($business['website']); ?>" target="_blank" rel="noopener noreferrer" class="btn-secondary">Visit Website</a>
                         <?php endif; ?>
                     </div>
@@ -366,7 +366,7 @@ include 'header.php';
                                                             echo !empty($loc) ? htmlspecialchars(implode(', ', $loc)) : 'None provided';
                                                             ?></p>
                         <p><strong>📞 Phone:</strong><br><?php echo htmlspecialchars($business['phone']); ?></p>
-                        <?php if (!empty($business['email'])): ?>
+                        <?php if (in_array($business['tier'], ['paid', 'premium']) && !empty($business['email'])): ?>
                             <p><strong>✉️ Email:</strong><br><a href="mailto:<?php echo htmlspecialchars($business['email']); ?>" style="color: var(--button-color);"><?php echo htmlspecialchars($business['email']); ?></a></p>
                         <?php endif; ?>
 
@@ -410,7 +410,7 @@ include 'header.php';
                     if (!empty($business['state'])) $mapQuery[] = $business['state'];
                     $mapStr = implode(', ', $mapQuery);
                     ?>
-                    <?php if (!empty($mapStr)): ?>
+                    <?php if ($business['tier'] === 'premium' && !empty($mapStr)): ?>
                         <div class="profile-map-wrap">
                             <iframe
                                 loading="lazy"
