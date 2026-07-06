@@ -13,6 +13,7 @@
                 <li><a href="/about.php">About Us</a></li>
                 <li><a href="/pricing.php">Pricing</a></li>
                 <li><a href="/add-business.php">Add Your Business</a></li>
+                <li><a href="/manage-listing.php">Manage Your Listing</a></li>
             </ul>
         </div>
 

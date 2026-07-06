@@ -1,0 +1,5 @@
+<svg width="360" height="56" viewBox="0 0 360 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 44 Q22 44 30 28 T54 12" stroke="#1766C2" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M44 12 L54 12 L54 22" stroke="#1766C2" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="70" y="38" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="22" fill="#0C1B33">Recovery <tspan fill="#1766C2">Business Hub</tspan></text>
+</svg>

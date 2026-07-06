@@ -2,3 +2,6 @@ node_modules/
 .env
 error_log
 _preview.html
+_logo-options.html
+_logo-montage.png
+logo-options/*.png
