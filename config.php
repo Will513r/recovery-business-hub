@@ -26,6 +26,77 @@ $db_name = $env_vars['DB_NAME'] ?? '';
 define('STRIPE_PAID_URL',    $env_vars['STRIPE_PAID_URL'] ?? '');
 define('STRIPE_PREMIUM_URL', $env_vars['STRIPE_PREMIUM_URL'] ?? '');
 
+// --- NOTIFICATION EMAIL (authenticated SMTP) ---
+// Raw mail() with a spoofed From silently fails on Hostinger (same bug that
+// broke the CRM intake until 2026-07-03). This sends through a real mailbox
+// over SMTPS instead. Needs SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS in .env.
+// Returns true on accepted delivery; logs and returns false on any failure.
+function rbh_send_email(string $to, string $subject, string $body): bool
+{
+    global $env_vars;
+    $host = $env_vars['SMTP_HOST'] ?? '';
+    $port = (int)($env_vars['SMTP_PORT'] ?? 465);
+    $user = $env_vars['SMTP_USER'] ?? '';
+    $pass = $env_vars['SMTP_PASS'] ?? '';
+
+    if ($host === '' || $user === '' || $pass === '') {
+        error_log('[rbh mail] SMTP not configured in .env, notification not sent');
+        return false;
+    }
+
+    $fp = @stream_socket_client("ssl://$host:$port", $errno, $errstr, 10);
+    if (!$fp) {
+        error_log("[rbh mail] connect failed: $errstr ($errno)");
+        return false;
+    }
+    stream_set_timeout($fp, 10);
+
+    // Send one SMTP command and require the expected status code
+    $say = function (?string $cmd, string $expect) use ($fp): bool {
+        if ($cmd !== null) {
+            fwrite($fp, $cmd . "\r\n");
+        }
+        // Read the full (possibly multi-line) response
+        do {
+            $line = fgets($fp, 512);
+            if ($line === false) {
+                return false;
+            }
+        } while (isset($line[3]) && $line[3] === '-');
+        if (strpos($line, $expect) !== 0) {
+            error_log('[rbh mail] SMTP said: ' . trim($line) . ' after ' . ($cmd === null ? '(connect)' : strtok($cmd, ' ')));
+            return false;
+        }
+        return true;
+    };
+
+    // No user input goes into headers here; subject/body are sanitized by callers
+    $ok = $say(null, '220')
+        && $say('EHLO recoverybusinesshub.com', '250')
+        && $say('AUTH LOGIN', '334')
+        && $say(base64_encode($user), '334')
+        && $say(base64_encode($pass), '235')
+        && $say("MAIL FROM:<$user>", '250')
+        && $say("RCPT TO:<$to>", '250')
+        && $say('DATA', '354')
+        && $say(
+            "From: Recovery Business Hub <$user>\r\n" .
+            "To: <$to>\r\n" .
+            'Subject: ' . str_replace(["\r", "\n"], ' ', $subject) . "\r\n" .
+            "Date: " . date('r') . "\r\n" .
+            "Content-Type: text/plain; charset=UTF-8\r\n" .
+            "\r\n" .
+            str_replace("\n.", "\n..", $body) . "\r\n.",
+            '250'
+        );
+
+    if ($ok) {
+        fwrite($fp, "QUIT\r\n");
+    }
+    fclose($fp);
+    return $ok;
+}
+
 // Set the master timezone for the application (Eastern Time)
 date_default_timezone_set('America/New_York');
 

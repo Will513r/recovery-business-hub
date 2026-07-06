@@ -128,12 +128,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // SECURITY: Strip newlines to prevent Email Header Injection
                 $safe_name_for_email = str_replace(["\r", "\n", "%0a", "%0d"], '', $name);
 
-                // Send email notification
+                // Send email notification through authenticated SMTP (raw mail()
+                // silently fails on Hostinger). Failure is logged, not fatal:
+                // the application is already saved and visible in admin.php.
                 $to = 'recoverybusinesshub@gmail.com';
                 $subject = 'New Business Application: ' . $safe_name_for_email;
-                $email_body = "Great news! A new business applied.\n\nName: $name\nTier: $tier\n\nNOTE: If tier is paid or premium, confirm the subscription exists in Stripe before approving.\n\nLogin to approve: https://www.recoverybusinesshub.com/admin.php";
-                $headers = "From: admin@recoverybusinesshub.com";
-                mail($to, $subject, $email_body, $headers);
+                $email_body = "Great news! A new business applied.\n\nName: $safe_name_for_email\nTier: $tier\n\nNOTE: If tier is paid or premium, confirm the subscription exists in Stripe before approving.\n\nLogin to approve: https://www.recoverybusinesshub.com/admin.php";
+                rbh_send_email($to, $subject, $email_body);
 
                 // --- BULLETPROOF STRIPE REDIRECT LOGIC ---
                 if ($tier === 'paid') {
