@@ -1,7 +1,6 @@
 <?php
 // add-business.php
-session_start();
-require_once 'config.php';
+require_once 'config.php'; // starts the session
 
 $message = "";
 
@@ -87,8 +86,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $_POST['email'] : '';
     $website = filter_var($_POST['website'] ?? '', FILTER_VALIDATE_URL) ? $_POST['website'] : '';
 
-    $description = $_POST['description'] ?? '';
-    $founder_story = $_POST['founder_story'] ?? '';
+    $description = trim($_POST['description'] ?? '');
+    $founder_story = trim($_POST['founder_story'] ?? '');
 
     // Secure Image Upload Handling
     $uploaded = handle_logo_upload();

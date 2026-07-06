@@ -5,6 +5,11 @@ include 'performance.php'; // performance helpers
 // 1. Get the search term, selected categories, and current page
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $selected_categories = isset($_GET['category']) ? $_GET['category'] : [];
+if (!is_array($selected_categories)) {
+    $selected_categories = [];
+}
+// Drop any URL-supplied category that isn't in our known list
+$selected_categories = array_values(array_intersect($selected_categories, $categories));
 $selected_state = isset($_GET['state']) ? $_GET['state'] : '';
 $per_page = 9;
 $current_page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -31,11 +36,11 @@ if (!empty($search)) {
 }
 
 // 4. Add Category Filter Logic if boxes were checked
-if (!empty($selected_categories) && is_array($selected_categories)) {
+if (!empty($selected_categories)) {
     $cat_conditions = [];
     foreach ($selected_categories as $cat) {
         $cat_conditions[] = "(CASE WHEN JSON_VALID(b.category) THEN JSON_CONTAINS(b.category, ?) ELSE b.category = ? END)";
-        $params[] = '"' . $cat . '"';
+        $params[] = json_encode($cat);
         $params[] = $cat;
         $types .= "ss";
     }

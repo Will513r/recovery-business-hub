@@ -1,9 +1,6 @@
 <?php
 // admin.php
-// Start a session to remember if the user is logged in (THIS IS REQUIRED!)
-session_start();
-
-// Connect to the database (THIS IS REQUIRED!)
+// Connect to the database (config.php also starts the session)
 require_once 'config.php';
 // --- SECURE PASSWORD HASH ---
 // Lives in .env (ADMIN_PASSWORD_HASH) so the hash never sits in a public repo.
@@ -42,14 +39,34 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_
     $business_id = (int) $_POST['business_id']; // The ID of the business
     $action = $_POST['action']; // Will be 'approve', 'reject', or 'delete'
 
-    if ($action === 'approve') {
-        $stmt = $conn->prepare("UPDATE businesses SET status = 'approved' WHERE id = ?");
-        $stmt->bind_param("i", $business_id);
+    if ($action === 'approve' || $action === 'reject') {
+        $new_status = $action === 'approve' ? 'approved' : 'rejected';
+        $stmt = $conn->prepare("UPDATE businesses SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $new_status, $business_id);
         $stmt->execute();
         $stmt->close();
-    } elseif ($action === 'reject') {
-        $stmt = $conn->prepare("UPDATE businesses SET status = 'rejected' WHERE id = ?");
+
+        // Let the owner know their listing status changed (skipped if no email on file)
+        $stmt = $conn->prepare("SELECT name, slug, email FROM businesses WHERE id = ?");
         $stmt->bind_param("i", $business_id);
+        $stmt->execute();
+        $owner = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($owner && filter_var($owner['email'], FILTER_VALIDATE_EMAIL)) {
+            $safe_name = str_replace(["\r", "\n"], '', $owner['name']);
+            if ($new_status === 'approved') {
+                $subject = 'Your listing is live on Recovery Business Hub';
+                $body = "Good news! Your listing for $safe_name was approved and is now live.\n\nView it here: https://www.recoverybusinesshub.com/business/{$owner['slug']}/\n\nQuestions? Just reply to this email.";
+            } else {
+                $subject = 'Update on your Recovery Business Hub application';
+                $body = "Thanks for applying to list $safe_name on Recovery Business Hub.\n\nWe weren't able to approve the listing as submitted. Reply to this email if you'd like details or want to resubmit.";
+            }
+            rbh_send_email($owner['email'], $subject, $body);
+        }
+    } elseif ($action === 'delete_review') {
+        $review_id = (int) ($_POST['review_id'] ?? 0);
+        $stmt = $conn->prepare("DELETE FROM reviews WHERE id = ?");
+        $stmt->bind_param("i", $review_id);
         $stmt->execute();
         $stmt->close();
     } elseif ($action === 'delete') {
@@ -114,7 +131,7 @@ include 'header.php';
         <h2>Admin Login</h2>
         <p>Please enter the administrator password to manage listings.</p>
 
-        <?php if ($error) echo "<p style='color: red; font-weight: bold;'>$error</p>"; ?>
+        <?php if ($error) echo "<p style='color: red; font-weight: bold;'>" . htmlspecialchars($error) . "</p>"; ?>
 
         <form method="POST" class="business-form">
             <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
@@ -195,6 +212,16 @@ include 'header.php';
         if ($page < 1) $page = 1;
         $offset = ($page - 1) * $limit; // Calculate where to start pulling data
 
+        // Count total matches so we know whether a next page actually exists
+        $count_stmt = $conn->prepare("SELECT COUNT(*) as total FROM businesses $admin_where_sql");
+        if (!empty($admin_params)) {
+            $count_stmt->bind_param($admin_types, ...$admin_params);
+        }
+        $count_stmt->execute();
+        $admin_total = (int) $count_stmt->get_result()->fetch_assoc()['total'];
+        $count_stmt->close();
+        $admin_total_pages = (int) ceil($admin_total / $limit);
+
         // Add LIMIT and OFFSET to the SQL query
         $sql = "SELECT * FROM businesses $admin_where_sql ORDER BY CASE status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 WHEN 'rejected' THEN 3 ELSE 4 END, created_at DESC LIMIT ? OFFSET ?";
 
@@ -233,6 +260,36 @@ include 'header.php';
                     <p><strong>Phone:</strong> <?php echo htmlspecialchars($row['phone']); ?></p>
                     <p style="margin-top: 10px;"><strong>Description:</strong><br> <?php echo nl2br(htmlspecialchars($row['description'])); ?></p>
 
+                    <?php
+                    // Reviews for this listing, so spam can be removed without touching the database directly
+                    $rev_stmt = $conn->prepare("SELECT id, reviewer_name, rating, comment, created_at FROM reviews WHERE business_id = ? ORDER BY created_at DESC LIMIT 20");
+                    $rev_stmt->bind_param("i", $row['id']);
+                    $rev_stmt->execute();
+                    $biz_reviews = $rev_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                    $rev_stmt->close();
+                    ?>
+                    <?php if (!empty($biz_reviews)): ?>
+                        <details style="margin-top: 1rem;">
+                            <summary style="cursor: pointer; font-weight: bold; color: var(--text-muted);">Reviews (<?php echo count($biz_reviews); ?>)</summary>
+                            <?php foreach ($biz_reviews as $rev): ?>
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                                    <div style="font-size: 0.9rem;">
+                                        <strong><?php echo htmlspecialchars($rev['reviewer_name']); ?></strong>
+                                        <span style="color: #F59E0B;"><?php echo str_repeat('★', (int)$rev['rating']); ?></span>
+                                        <span style="color: var(--text-muted);"><?php echo date('M j, Y', strtotime($rev['created_at'])); ?></span>
+                                        <?php if (!empty($rev['comment'])): ?><br><?php echo htmlspecialchars($rev['comment']); ?><?php endif; ?>
+                                    </div>
+                                    <form method="POST" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+                                        <input type="hidden" name="business_id" value="<?php echo $row['id']; ?>">
+                                        <input type="hidden" name="review_id" value="<?php echo $rev['id']; ?>">
+                                        <button type="submit" name="action" value="delete_review" style="background: none; border: 1px solid #d32f2f; color: #d32f2f; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 0.8rem;" onclick="return confirm('Delete this review permanently?');">Delete</button>
+                                    </form>
+                                </div>
+                            <?php endforeach; ?>
+                        </details>
+                    <?php endif; ?>
+
                     <form method="POST" style="margin-top: 1.5rem; display: flex; gap: 15px; flex-wrap: wrap;">
                         <input type="hidden" name="business_id" value="<?php echo $row['id']; ?>">
                         <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
@@ -264,7 +321,7 @@ include 'header.php';
                 <?php else: ?>
                     <div></div> <?php endif; ?>
 
-                <?php if ($result->num_rows == $limit): ?>
+                <?php if ($page < $admin_total_pages): ?>
                     <a href="?page=<?php echo $page + 1; ?>&q=<?php echo urlencode($admin_search); ?>&status_filter=<?php echo urlencode($admin_status); ?>" class="btn-primary" style="text-decoration: none; background-color: #555;">Next Page &rarr;</a>
                 <?php endif; ?>
             </div>

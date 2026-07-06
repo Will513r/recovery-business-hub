@@ -1,7 +1,6 @@
 <?php
 // edit-business.php
-session_start();
-require_once 'config.php';
+require_once 'config.php'; // starts the session
 
 // 1. SECURITY CHECK: Kick out anyone who isn't logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -34,18 +33,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!is_array($selected_categories)) {
         $selected_categories = [];
     }
+    // Drop any submitted category that isn't in our known list
+    $selected_categories = array_values(array_intersect($selected_categories, $categories));
     $category_json = json_encode($selected_categories);
 
     $address = $_POST['address'] ?? '';
     $city = $_POST['city'] ?? '';
     $state = $_POST['state'] ?? '';
+    if (!in_array($state, $states_list, true)) {
+        $state = '';
+    }
     $phone = $_POST['phone'] ?? '';
 
     // SERVER-SIDE VALIDATION: Email and Website
     $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $_POST['email'] : '';
     $website = filter_var($_POST['website'] ?? '', FILTER_VALIDATE_URL) ? $_POST['website'] : '';
 
-    $description = $_POST['description'] ?? '';
+    $description = trim($_POST['description'] ?? '');
+    $founder_story = trim($_POST['founder_story'] ?? '');
 
     $allowed_tiers    = ['free', 'paid', 'premium'];
     $allowed_statuses = ['pending', 'approved', 'rejected'];
@@ -66,15 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $hours_json = parse_hours_post();
 
     // Prepare the UPDATE statement
-    $stmt = $conn->prepare("UPDATE businesses SET name=?, category=?, address=?, city=?, state=?, phone=?, email=?, logo=?, website=?, description=?, hours=?, tier=?, status=? WHERE id=?");
+    $stmt = $conn->prepare("UPDATE businesses SET name=?, category=?, address=?, city=?, state=?, phone=?, email=?, logo=?, website=?, description=?, founder_story=?, hours=?, tier=?, status=? WHERE id=?");
 
     if ($stmt) {
-        $stmt->bind_param("sssssssssssssi", $name, $category_json, $address, $city, $state, $phone, $email, $logo_path, $website, $description, $hours_json, $tier, $status, $business_id);
+        $stmt->bind_param("ssssssssssssssi", $name, $category_json, $address, $city, $state, $phone, $email, $logo_path, $website, $description, $founder_story, $hours_json, $tier, $status, $business_id);
         if ($stmt->execute()) {
             $message = "<p style='color: var(--accent-color); text-align: center; font-weight: bold;'>Business updated successfully!</p>";
             $business['logo'] = $logo_path;
             $business['hours'] = $hours_json;
             $business['category'] = $category_json;
+            $business['founder_story'] = $founder_story;
         } else {
             $message = "<p style='color: red; text-align: center;'>Error updating business.</p>";
         }
@@ -219,6 +225,11 @@ include 'header.php';
         <div class="form-group">
             <label>Business Description</label>
             <textarea name="description" rows="5" required><?php echo htmlspecialchars($business['description']); ?></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Comeback Story (Optional)</label>
+            <textarea name="founder_story" rows="3" placeholder="The owner's recovery story, shown as a featured quote on the profile."><?php echo htmlspecialchars($business['founder_story'] ?? ''); ?></textarea>
         </div>
 
         <div style="background-color: var(--accent-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">

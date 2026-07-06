@@ -12,7 +12,7 @@ $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
 $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?'));
 ?>
 <!DOCTYPE html>
-<!-- deployed 2026-07-05 19:59 -->
+<!-- deployed 2026-07-05 20:33 -->
 <html lang="en">
 
 <head>
@@ -32,7 +32,9 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
     <meta name="twitter:image" content="<?php echo $og_image_url; ?>">
     <meta name="twitter:card" content="summary_large_image">
 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?php echo htmlspecialchars($env_vars['ADSENSE_PUB_ID'] ?? 'ca-pub-6821162875854891'); ?>" crossorigin="anonymous"></script>
+    <?php if (!empty($env_vars['ADSENSE_PUB_ID'])): ?>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?php echo htmlspecialchars($env_vars['ADSENSE_PUB_ID']); ?>" crossorigin="anonymous"></script>
+    <?php endif; ?>
 
     <link rel="stylesheet" href="/style.css">
     <link rel="canonical" href="<?php echo $current_url; ?>">

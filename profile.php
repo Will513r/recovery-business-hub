@@ -1,7 +1,6 @@
 <?php
 // profile.php
-session_start();
-require_once 'config.php';
+require_once 'config.php'; // starts the session
 
 // 1. Grab either the slug (from SEO URL) or the ID
 $slug = isset($_GET['slug']) ? $_GET['slug'] : '';
@@ -344,9 +343,11 @@ include 'header.php';
                                 <script>
                                     const textarea = document.getElementById('review-comment');
                                     const charCount = document.getElementById('char-count');
-                                    textarea.addEventListener('input', function() {
-                                        charCount.textContent = this.value.length + ' / 500';
-                                    });
+                                    function updateCharCount() {
+                                        charCount.textContent = textarea.value.length + ' / 500';
+                                    }
+                                    updateCharCount();
+                                    textarea.addEventListener('input', updateCharCount);
                                 </script>
 
                                 <button type="submit" class="btn-primary" style="margin-top: 0.5rem;">Submit Review</button>
