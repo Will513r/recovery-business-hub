@@ -1209,3 +1209,12 @@ footer :focus-visible { outline-color: var(--concrete); }
 @media (min-width: 900px) {
   .job-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* phase C: phone fixes (parent review 2026-11-12) */
+@media (max-width: 599px) {
+  /* The fanned tags clip at phone width; the tag cards below carry the motif. */
+  .tag-stack { display: none; }
+  /* One filter button, not a heading plus a button that say the same thing. */
+  .filters__head h2 { display: none; }
+  .filters__head #mobile-filter-toggle { width: 100%; }
+}

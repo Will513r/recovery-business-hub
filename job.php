@@ -102,7 +102,7 @@ include 'header.php';
 
         <?php if ($applied): ?>
             <p class="form-note form-note--success">Sent. The employer has your info and will reach out directly.</p>
-            <p class="job-apply__after">Not heard back in a week? A short follow-up call or text is fine.</p>
+            <p class="job-apply__after">Not heard back in a week? Tell us at <a href="mailto:recoverybusinesshub@gmail.com">recoverybusinesshub@gmail.com</a>. We follow up with employers who go quiet.</p>
             <p><a href="/jobs" class="btn-secondary">See more jobs</a></p>
         <?php else: ?>
             <p class="job-apply__lead">Give a phone number or an email so they can reach you. That's all they need.</p>
