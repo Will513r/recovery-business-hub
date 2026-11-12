@@ -2,6 +2,8 @@
 // admin.php
 // Connect to the database (config.php also starts the session)
 require_once 'config.php';
+require_once 'jobs-lib.php';
+require_once 'cards-lib.php';
 // --- SECURE PASSWORD HASH ---
 // Lives in .env (ADMIN_PASSWORD_HASH) so the hash never sits in a public repo.
 // Generate one with: php -r "echo password_hash('yourpassword', PASSWORD_DEFAULT);"
@@ -36,10 +38,15 @@ if (isset($_GET['logout'])) {
 // Handle Approve / Reject / Delete actions (only if logged in)
 if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_POST['action'])) {
     csrf_verify();
-    $business_id = (int) $_POST['business_id']; // The ID of the business
+    $business_id = (int) ($_POST['business_id'] ?? 0); // The ID of the business
     $action = $_POST['action']; // Will be 'approve', 'reject', or 'delete'
 
-    if ($action === 'approve' || $action === 'reject') {
+    if (in_array($action, ['approve_job', 'reject_job', 'close_job'], true)) {
+        // Jobs board actions live in jobs-lib.php
+        rbh_admin_job_action($conn, $action, (int) ($_POST['job_id'] ?? 0));
+        header('Location: admin.php?view=jobs');
+        exit;
+    } elseif ($action === 'approve' || $action === 'reject') {
         $new_status = $action === 'approve' ? 'approved' : 'rejected';
         $stmt = $conn->prepare("UPDATE businesses SET status = ? WHERE id = ?");
         $stmt->bind_param("si", $new_status, $business_id);
@@ -117,6 +124,16 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
     }
 }
 
+// Jobs board: pending count for the dashboard link, view switch
+$pending_jobs = 0;
+$admin_view = (isset($_GET['view']) && $_GET['view'] === 'jobs') ? 'jobs' : '';
+if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+    $pj = $conn->query("SELECT COUNT(*) AS c FROM jobs WHERE status = 'pending'");
+    if ($pj) {
+        $pending_jobs = (int) $pj->fetch_assoc()['c'];
+    }
+}
+
 // Admin search & filter vars (needed before HTML renders the search bar)
 $admin_search = isset($_GET['q']) ? trim($_GET['q']) : '';
 $admin_status = isset($_GET['status_filter']) ? $_GET['status_filter'] : '';
@@ -148,6 +165,64 @@ include 'header.php';
             <h2>Business Directory Management</h2>
             <a href="?logout=true" style="color: red; font-weight: bold;">Logout</a>
         </div>
+
+        <nav class="admin-tabs" aria-label="Admin views">
+            <a href="admin.php" class="btn-secondary<?php echo $admin_view === '' ? ' is-current' : ''; ?>">Businesses</a>
+            <a href="admin.php?view=jobs" class="btn-secondary<?php echo $admin_view === 'jobs' ? ' is-current' : ''; ?>">Jobs<?php echo $pending_jobs > 0 ? ' (' . $pending_jobs . ' pending)' : ''; ?></a>
+        </nav>
+
+        <?php if ($admin_view === 'jobs'): ?>
+            <?php
+            $jobs_pending  = rbh_jobs_by_status($conn, 'pending');
+            $jobs_approved = rbh_jobs_by_status($conn, 'approved');
+            $job_sections = [
+                ['Pending jobs', $jobs_pending, 'No jobs waiting.'],
+                ['Live jobs', $jobs_approved, 'No jobs are live.'],
+            ];
+            ?>
+            <?php foreach ($job_sections as [$heading, $rows, $none]): ?>
+                <h3 class="admin-jobs__heading"><?php echo rbh_h($heading); ?> (<?php echo count($rows); ?>)</h3>
+                <?php if (!$rows): ?>
+                    <p class="admin-jobs__none"><?php echo rbh_h($none); ?></p>
+                <?php endif; ?>
+                <?php foreach ($rows as $j): ?>
+                    <div class="business-card admin-job">
+                        <h4 class="admin-job__title"><?php echo rbh_h((string)$j['title']); ?> <span class="admin-job__pay"><?php echo rbh_h(rbh_pay_label($j)); ?></span></h4>
+                        <dl class="admin-job__facts">
+                            <div><dt>Employer</dt><dd><?php echo rbh_h((string)$j['employer_name']); ?></dd></div>
+                            <div><dt>Email</dt><dd><?php echo rbh_h((string)$j['employer_email']); ?></dd></div>
+                            <?php if (trim((string)$j['employer_phone']) !== ''): ?>
+                                <div><dt>Phone</dt><dd><?php echo rbh_h((string)$j['employer_phone']); ?></dd></div>
+                            <?php endif; ?>
+                            <div><dt>Where</dt><dd><?php echo rbh_h(trim((string)$j['town'] . ', ' . rbh_area_label((string)$j['area']), ', ')); ?></dd></div>
+                            <div><dt>Kind</dt><dd><?php echo rbh_h((string)$j['kind']); ?></dd></div>
+                            <?php if (trim((string)$j['shift']) !== ''): ?>
+                                <div><dt>Shift</dt><dd><?php echo rbh_h((string)$j['shift']); ?></dd></div>
+                            <?php endif; ?>
+                            <div><dt>Policy</dt><dd><?php echo rbh_h(rbh_policy_label((string)$j['policy'])); ?><?php echo trim((string)$j['policy_note']) !== '' ? ' (' . rbh_h((string)$j['policy_note']) . ')' : ''; ?></dd></div>
+                            <div><dt>Submitted</dt><dd><?php echo rbh_h(date('M j, Y g:ia', strtotime((string)$j['created_at']))); ?></dd></div>
+                            <?php if (!empty($j['expires_at'])): ?>
+                                <div><dt>Expires</dt><dd><?php echo rbh_h(date('M j, Y', strtotime((string)$j['expires_at']))); ?></dd></div>
+                            <?php endif; ?>
+                        </dl>
+                        <p class="admin-job__desc"><?php echo nl2br(rbh_h((string)$j['description'])); ?></p>
+                        <form method="POST" class="admin-job__actions">
+                            <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+                            <input type="hidden" name="job_id" value="<?php echo (int)$j['id']; ?>">
+                            <?php if ($j['status'] === 'pending'): ?>
+                                <button type="submit" name="action" value="approve_job" class="btn-secondary">Approve</button>
+                                <button type="submit" name="action" value="reject_job" class="btn-secondary" onclick="return confirm('Reject this job and email the employer?');">Reject</button>
+                            <?php else: ?>
+                                <a href="/jobs/<?php echo rbh_h((string)$j['slug']); ?>/" class="btn-secondary">View</a>
+                                <button type="submit" name="action" value="close_job" class="btn-secondary" onclick="return confirm('Close this job? It comes off the site.');">Close</button>
+                            <?php endif; ?>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+</main>
+<?php include 'footer.php'; exit; ?>
+        <?php endif; ?>
 
         <!-- Dashboard Stats -->
         <div class="stats-grid">

@@ -1,6 +1,7 @@
 <?php
 // sitemap.php
 require_once 'config.php';
+require_once 'jobs-lib.php';
 
 // Tell the browser and search engines that this is an XML file, not HTML
 header("Content-Type: application/xml; charset=utf-8");
@@ -52,6 +53,22 @@ if ($result && $result->num_rows > 0) {
         echo "    <priority>0.8</priority>\n";
         echo "  </url>\n";
     }
+}
+
+// 3. Open jobs
+foreach (rbh_open_jobs($conn, '', '', 500) as $job) {
+    echo "  <url>
+";
+    echo "    <loc>" . $base_url . "/jobs/" . htmlspecialchars($job['slug']) . "/</loc>
+";
+    echo "    <lastmod>" . date('c', strtotime($job['approved_at'])) . "</lastmod>
+";
+    echo "    <changefreq>weekly</changefreq>
+";
+    echo "    <priority>0.7</priority>
+";
+    echo "  </url>
+";
 }
 
 // Close the XML output

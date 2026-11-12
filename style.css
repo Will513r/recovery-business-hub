@@ -1153,3 +1153,59 @@ footer :focus-visible { outline-color: var(--concrete); }
   .tag-stack .tag-card:nth-child(3) { transform: rotate(19deg); }
   .photo-frame:hover img { transform: none; }
 }
+
+/* phase B: jobs */
+.job-filters { display: flex; flex-direction: column; gap: 0.75rem; max-width: 640px; margin-top: 1.25rem; }
+.job-filters__field label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+.job-filters .filter-select { margin-bottom: 0; }
+.job-filters__actions { display: flex; gap: 0.5rem; }
+.job-filters__actions .btn-secondary { flex: 1; min-height: 48px; }
+.job-legend { margin-top: 1rem; font-size: 0.95rem; }
+.jobs-list { margin-bottom: 3rem; }
+.empty-state .about-footer { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+.job-page { max-width: calc(760px + (var(--gutter) * 2)); }
+.job-detail:hover,
+.job-detail:focus-within { transform: none; border-color: var(--border); }
+.job-detail__title { margin: 0; font-size: clamp(1.7rem, 6vw, 2.4rem); }
+.job-detail__employer { margin: 0; color: var(--muted); font-weight: 600; }
+.job-detail__note { margin: 0; color: var(--muted); font-size: 0.95rem; }
+.job-facts { margin: 0.25rem 0 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.job-facts > div { display: flex; gap: 0.6rem; }
+.job-facts dt { font-weight: 600; min-width: 7rem; color: var(--muted); }
+.job-facts dd { margin: 0; }
+.job-body,
+.job-apply { margin-top: 2rem; }
+.job-body h2,
+.job-apply h2 { font-size: 1.5rem; }
+.job-apply__lead { color: var(--muted); }
+.apply-form { margin-top: 1rem; }
+.apply-form__privacy { margin: 0 0 1rem; font-size: 0.95rem; color: var(--muted); }
+
+.post-job-form .form-row--even > .form-group:first-child,
+.post-job-form .form-row--even > .form-group:last-child { flex: 1; }
+.post-job-form .form-row { flex-direction: column; gap: 0; }
+.policy-option { align-items: flex-start; padding: 0.7rem; }
+.policy-option input { margin-top: 0.2rem; }
+
+.admin-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+.admin-tabs .is-current { background: var(--ink); color: var(--tag-white); }
+.admin-jobs__heading { margin: 1.5rem 0 0.75rem; }
+.admin-jobs__none { color: var(--muted); }
+.admin-job { margin-bottom: 1rem; }
+.admin-job__title { margin: 0 0 0.5rem; font-size: 1.2rem; }
+.admin-job__pay { font-weight: 400; color: var(--muted); }
+.admin-job__facts { margin: 0 0 0.75rem; }
+.admin-job__facts > div { display: flex; gap: 0.6rem; }
+.admin-job__facts dt { font-weight: 600; min-width: 6.5rem; color: var(--muted); }
+.admin-job__facts dd { margin: 0; overflow-wrap: anywhere; }
+.admin-job__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+@media (min-width: 640px) {
+  .job-filters { flex-direction: row; align-items: flex-end; max-width: none; }
+  .job-filters__field { flex: 1; }
+  .post-job-form .form-row { flex-direction: row; gap: 1rem; }
+}
+@media (min-width: 900px) {
+  .job-grid { grid-template-columns: repeat(2, 1fr); }
+}
