@@ -25,7 +25,7 @@ include 'header.php';
 <section class="page-head">
     <div class="wrap">
         <h1>Jobs from employers who said yes up front</h1>
-        <p>Every job here states the employer's background check policy before you apply. Nothing to disclose. Nobody pulls the offer on page two.</p>
+        <p>Every job here states the employer's background check policy before you apply. Nothing to disclose. You know where you stand before you apply.</p>
 
         <form class="job-filters" action="/jobs" method="GET">
             <div class="job-filters__field">
