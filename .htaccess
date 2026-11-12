@@ -10,6 +10,9 @@ RewriteEngine On
     Require all denied
 </FilesMatch>
 RewriteRule ^sql/ - [F,L]
+<FilesMatch "^(jobs|cards)-lib\.php$">
+    Require all denied
+</FilesMatch>
 
 # 0.2 v2: pricing page is gone, plans were dropped (2026-11)
 RewriteRule ^pricing(\.php)?/?$ / [R=301,L]
