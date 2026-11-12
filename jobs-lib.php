@@ -127,6 +127,29 @@ function rbh_spam_fields(): string
         . '<label>Leave this empty<input type="text" name="company_site" tabindex="-1" autocomplete="off"></label></div>';
 }
 
+// reCAPTCHA v3, browser side. Echo once after a form whose class includes $form_class.
+// Prints nothing when RECAPTCHA_SITE_KEY is unset (local), so the form posts as normal.
+// When the live .env has the secret, rbh_spam_check() REQUIRES the token, so every
+// public form must include this or its posts get silently dropped as bots.
+function rbh_recaptcha_js(string $form_class): string
+{
+    global $env_vars;
+    $key = $env_vars['RECAPTCHA_SITE_KEY'] ?? '';
+    if ($key === '') {
+        return '';
+    }
+    $k = htmlspecialchars($key, ENT_QUOTES);
+    $sel = json_encode('form.' . $form_class);
+    $kjs = json_encode($key);
+    return '<script src="https://www.google.com/recaptcha/api.js?render=' . $k . '"></script>' . "\n"
+        . "<script>(function(){var f=document.querySelector($sel);if(!f)return;var go=false;"
+        . "f.addEventListener('submit',function(e){if(go)return;e.preventDefault();"
+        . "var i=f.querySelector('input[name=\"g-recaptcha-response\"]');"
+        . "if(!i){i=document.createElement('input');i.type='hidden';i.name='g-recaptcha-response';f.appendChild(i);}"
+        . "grecaptcha.ready(function(){grecaptcha.execute($kjs,{action:'submit'}).then(function(t){i.value=t;go=true;HTMLFormElement.prototype.submit.call(f);});});"
+        . "});})();</script>\n";
+}
+
 // Returns '' when the request looks human, else a reason (logged, never shown).
 function rbh_spam_check(string $form): string
 {

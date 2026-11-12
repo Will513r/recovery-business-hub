@@ -141,6 +141,7 @@ include 'header.php';
                 <p class="apply-form__privacy">Your info goes by email to the employer, with a copy to Recovery Business Hub. Nothing is saved on the site.</p>
                 <button type="submit" class="btn-primary btn-submit">Apply</button>
             </form>
+            <?php echo rbh_recaptcha_js('apply-form'); ?>
         <?php endif; ?>
     </section>
 </main>

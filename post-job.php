@@ -168,6 +168,7 @@ include 'header.php';
 
             <button type="submit" class="btn-primary btn-submit">Post the job</button>
         </form>
+        <?php echo rbh_recaptcha_js('post-job-form'); ?>
     <?php endif; ?>
 </main>
 
