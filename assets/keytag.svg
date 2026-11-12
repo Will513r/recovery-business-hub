@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80" role="img" aria-label="Key tag">
+  <path d="M60 4 H34 A30 30 0 0 0 4 34 V46 A30 30 0 0 0 34 76 H60 Z" fill="var(--stub, #1E8A4C)" stroke="#141414" stroke-width="2"/>
+  <circle cx="28" cy="40" r="9" fill="var(--hole, #ECECE8)" stroke="#141414" stroke-width="2"/>
+  <path d="M60 4 H230 A6 6 0 0 1 236 10 V70 A6 6 0 0 1 230 76 H60 Z" fill="#FFFFFF" stroke="#141414" stroke-width="2"/>
+</svg>
