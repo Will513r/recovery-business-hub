@@ -105,6 +105,24 @@ function rbh_private_dir(): string
     return $dir;
 }
 
+// Last $n delivery-log events, newest first, for the admin Jobs tab.
+function rbh_recent_log(int $n = 15): array
+{
+    $file = rbh_private_dir() . '/jobs-log.jsonl';
+    if (!is_file($file)) {
+        return [];
+    }
+    $lines = @file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    $out = [];
+    foreach (array_reverse(array_slice($lines, -$n)) as $line) {
+        $row = json_decode($line, true);
+        if (is_array($row)) {
+            $out[] = $row;
+        }
+    }
+    return $out;
+}
+
 // Delivery log only. Never applicant names, phones, emails or messages.
 function rbh_log_event(string $type, array $data): void
 {
@@ -422,9 +440,13 @@ function rbh_handle_apply(mysqli $conn, array $job): array
         . "Reach out to them directly. Even a quick no helps. Nobody likes getting ghosted.\n";
 
     $reply_to = $has_email ? $v['email'] : null;
+    $GLOBALS['rbh_mail_last_error'] = '';
     $employer_sent = rbh_send_email($job['employer_email'], 'New applicant: ' . $job['title'], $body, $reply_to);
+    $employer_err = $employer_sent ? '' : ($GLOBALS['rbh_mail_last_error'] ?? '');
+    $GLOBALS['rbh_mail_last_error'] = '';
     $copy_sent = rbh_send_email(RBH_COPY_TO, 'Copy, applicant for ' . $job['title'] . ' at ' . $job['employer_name'], $body, $reply_to);
-    rbh_log_event('apply', ['job_id' => (int)$job['id'], 'employer_sent' => $employer_sent, 'copy_sent' => $copy_sent]);
+    $copy_err = $copy_sent ? '' : ($GLOBALS['rbh_mail_last_error'] ?? '');
+    rbh_log_event('apply', ['job_id' => (int)$job['id'], 'employer_sent' => $employer_sent, 'copy_sent' => $copy_sent, 'employer_err' => $employer_err, 'copy_err' => $copy_err]);
 
     if (!$employer_sent) {
         return ['ok' => false, 'errors' => ['form' => "That didn't go through. Try again in a minute."], 'values' => $v];

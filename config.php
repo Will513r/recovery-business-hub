@@ -57,12 +57,14 @@ function rbh_send_email(string $to, string $subject, string $body, ?string $repl
 
     if ($host === '' || $user === '' || $pass === '') {
         error_log('[rbh mail] SMTP not configured in .env, notification not sent');
+        $GLOBALS['rbh_mail_last_error'] = 'smtp not configured';
         return false;
     }
 
     $fp = @stream_socket_client("ssl://$host:$port", $errno, $errstr, 10);
     if (!$fp) {
         error_log("[rbh mail] connect failed: $errstr ($errno)");
+        $GLOBALS['rbh_mail_last_error'] = "connect failed: $errstr ($errno)";
         return false;
     }
     stream_set_timeout($fp, 10);
@@ -76,11 +78,13 @@ function rbh_send_email(string $to, string $subject, string $body, ?string $repl
         do {
             $line = fgets($fp, 512);
             if ($line === false) {
+                $GLOBALS['rbh_mail_last_error'] = 'no reply (timeout) after ' . ($cmd === null ? '(connect)' : strtok($cmd, ' '));
                 return false;
             }
         } while (isset($line[3]) && $line[3] === '-');
         if (strpos($line, $expect) !== 0) {
             error_log('[rbh mail] SMTP said: ' . trim($line) . ' after ' . ($cmd === null ? '(connect)' : strtok($cmd, ' ')));
+            $GLOBALS['rbh_mail_last_error'] = 'SMTP said: ' . substr(trim($line), 0, 200) . ' after ' . ($cmd === null ? '(connect)' : strtok($cmd, ' '));
             return false;
         }
         return true;

@@ -220,6 +220,26 @@ include 'header.php';
                     </div>
                 <?php endforeach; ?>
             <?php endforeach; ?>
+            <section class="admin-delivery-log">
+                <h2>Email delivery log</h2>
+                <p>Last 15 events. Did the emails go out? Nothing about applicants is kept here.</p>
+                <?php $log_rows = rbh_recent_log(15); ?>
+                <?php if (!$log_rows): ?>
+                    <p>Nothing logged yet.</p>
+                <?php else: ?>
+                    <ul id="delivery-log">
+                        <?php foreach ($log_rows as $r):
+                            $parts = [];
+                            foreach ($r as $k => $val) {
+                                if ($k === 't') continue;
+                                $parts[] = $k . '=' . (is_bool($val) ? ($val ? 'yes' : 'NO') : (string)$val);
+                            }
+                        ?>
+                            <li><code><?php echo rbh_h(substr((string)($r['t'] ?? ''), 0, 19) . '  ' . implode('  ', $parts)); ?></code></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
 </main>
 <?php include 'footer.php'; exit; ?>
         <?php endif; ?>
