@@ -31,9 +31,25 @@ define('STRIPE_PREMIUM_URL', $env_vars['STRIPE_PREMIUM_URL'] ?? '');
 // broke the CRM intake until 2026-07-03). This sends through a real mailbox
 // over SMTPS instead. Needs SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS in .env.
 // Returns true on accepted delivery; logs and returns false on any failure.
-function rbh_send_email(string $to, string $subject, string $body): bool
+function rbh_send_email(string $to, string $subject, string $body, ?string $reply_to = null): bool
 {
+    // Reply-To is the only user-supplied header. Validate and strip CRLF.
+    $reply_header = '';
+    if ($reply_to !== null && filter_var($reply_to, FILTER_VALIDATE_EMAIL)) {
+        $reply_header = 'Reply-To: <' . str_replace(["\r", "\n", '<', '>'], '', $reply_to) . ">\r\n";
+    }
     global $env_vars;
+    // Local testing only: MAIL_LOG_ONLY=1 in a local .env writes mail to PRIVATE_DIR/mail-test.log
+    // instead of sending. Never set it on the live server (the log would hold applicant details).
+    if (($env_vars['MAIL_LOG_ONLY'] ?? '') === '1' && !empty($env_vars['PRIVATE_DIR'])) {
+        @file_put_contents(
+            rtrim($env_vars['PRIVATE_DIR'], '/\\') . '/mail-test.log',
+            "=== " . date('c') . "\nTo: $to\n{$reply_header}Subject: $subject\n\n$body\n\n",
+            FILE_APPEND
+        );
+        return true;
+    }
+
     $host = $env_vars['SMTP_HOST'] ?? '';
     $port = (int)($env_vars['SMTP_PORT'] ?? 465);
     $user = $env_vars['SMTP_USER'] ?? '';
@@ -70,7 +86,7 @@ function rbh_send_email(string $to, string $subject, string $body): bool
         return true;
     };
 
-    // No user input goes into headers here; subject/body are sanitized by callers
+    // Only Reply-To carries user input (validated above); subject/body are sanitized by callers
     $ok = $say(null, '220')
         && $say('EHLO recoverybusinesshub.com', '250')
         && $say('AUTH LOGIN', '334')
@@ -82,6 +98,7 @@ function rbh_send_email(string $to, string $subject, string $body): bool
         && $say(
             "From: Recovery Business Hub <$user>\r\n" .
             "To: <$to>\r\n" .
+            $reply_header .
             'Subject: ' . str_replace(["\r", "\n"], ' ', $subject) . "\r\n" .
             "Date: " . date('r') . "\r\n" .
             "Content-Type: text/plain; charset=UTF-8\r\n" .
