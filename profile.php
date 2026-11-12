@@ -1,6 +1,8 @@
 <?php
 // profile.php
 require_once 'config.php'; // starts the session
+require_once 'jobs-lib.php';
+require_once 'cards-lib.php';
 
 // 1. Grab either the slug (from SEO URL) or the ID
 $slug = isset($_GET['slug']) ? $_GET['slug'] : '';
@@ -36,15 +38,15 @@ if ($business && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_r
     $comment = trim($_POST['comment'] ?? '');
 
     if (empty($reviewer_name) || $rating < 1 || $rating > 5) {
-        $review_message = "<p style='color: red; margin-bottom: 1rem;'>Please provide a name and a valid star rating.</p>";
+        $review_message = "<p class='field-error'>Add your name and pick a star rating.</p>";
     } else {
         $stmt = $conn->prepare("INSERT INTO reviews (business_id, reviewer_name, rating, comment) VALUES (?, ?, ?, ?)");
         if ($stmt) {
             $stmt->bind_param("isis", $business_id, $reviewer_name, $rating, $comment);
             if ($stmt->execute()) {
-                $review_message = "<p style='color: var(--button-color); font-weight: bold; margin-bottom: 1rem;'>Thank you for your review!</p>";
+                $review_message = "<p class='form-note form-note--success'>Thanks. Your review is in.</p>";
             } else {
-                $review_message = "<p style='color: red; margin-bottom: 1rem;'>Error submitting review.</p>";
+                $review_message = "<p class='field-error'>That didn't go through. Try again.</p>";
             }
             $stmt->close();
         }
@@ -115,7 +117,7 @@ if ($business) {
     // Set dynamic SEO Title and Description
     $page_title       = $business['name'];
     $cat_string       = isset($cat_list[0]) ? $cat_list[0] : 'Business';
-    $page_description = $cat_string . ' — ' . mb_strimwidth(strip_tags($business['description']), 0, 155, '...');
+    $page_description = $cat_string . ': ' . mb_strimwidth(strip_tags($business['description']), 0, 155, '...');
 
     // Set dynamic SEO Image to the Business Logo
     if (!empty($business['logo'])) {
@@ -127,10 +129,10 @@ if ($business) {
         "@context" => "https://schema.org",
         "@type" => "LocalBusiness",
         "name" => $business['name'],
-        "image" => !empty($business['logo']) ? "https://www.recoverybusinesshub.com/" . ltrim($business['logo'], '/') : "https://www.recoverybusinesshub.com/Recovery_Business_Hub_Logo.png",
+        "image" => !empty($business['logo']) ? "https://www.recoverybusinesshub.com/" . ltrim($business['logo'], '/') : "https://www.recoverybusinesshub.com/logo-keytag.png",
         "description" => strip_tags($business['description']),
         "telephone" => $business['phone'],
-        "url" => (in_array($business['tier'], ['paid', 'premium']) && !empty($business['website'])) ? $business['website'] : "https://www.recoverybusinesshub.com/profile.php?id=" . $business_id
+        "url" => !empty($business['website']) ? $business['website'] : "https://www.recoverybusinesshub.com/business/" . $business['slug'] . "/"
     ];
 
     // Add Address to Schema if available
@@ -176,260 +178,253 @@ if ($business) {
     // Combine both schemas into an array and convert to JSON string for the header
     $schema_json = json_encode([$local_business_schema, $breadcrumb_schema], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } else {
-    $page_title       = 'Business Not Found';
-    $page_description = 'This listing may be pending review or has been removed from the Recovery Business Hub directory.';
+    $page_title       = 'Business not found';
+    $page_description = 'This listing may be pending review or has been taken down.';
 }
+
+// Open jobs for this business (shown on the profile)
+$open_jobs = $business ? rbh_business_jobs($conn, (int)$business_id) : [];
 
 // -------------------------------
 include 'header.php';
 ?>
 
-<main class="directory-container" style="display: block; max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
+<main class="profile-wrap">
 
     <?php if ($business): ?>
-        <div style="margin-bottom: 1.5rem;">
-            <a href="/index.php" style="color: var(--button-color); text-decoration: none; font-weight: bold;">← Back to Directory</a>
-        </div>
+        <a href="/businesses" class="back-link">&larr; All businesses</a>
 
         <article class="profile-card">
+            <div class="profile-stub" aria-hidden="true"><span class="tag-card__hole"></span></div>
 
-            <div class="profile-header-wrap">
-                <div class="profile-img-col">
-                    <?php if (!empty($business['logo'])): ?>
-                        <?php $logo_src = '/' . ltrim($business['logo'], '/'); ?>
-                        <img src="<?php echo htmlspecialchars($logo_src); ?>" alt="Official business logo for <?php echo htmlspecialchars($business['name']); ?>" loading="lazy">
-                    <?php else: ?>
-                        <div class="logo-placeholder" style="width: 100%; height: 200px; font-size: 3rem;">Logo</div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="profile-intro-col">
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 0.5rem;">
-                        <?php if ($business['tier'] === 'premium'): ?>
-                            <span class="badge badge-premium">Premium Partner</span>
-                        <?php elseif ($business['tier'] === 'paid'): ?>
-                            <span class="badge badge-paid">Featured</span>
-                        <?php endif; ?>
-
-                        <?php if (!empty($business['is_verified'])): ?>
-                            <span class="badge-verified badge-verified--large">✔ Verified</span>
-                        <?php endif; ?>
-
-                        <?php if (!empty($parsed_hours)): ?>
-                            <?php if ($is_open_now): ?>
-                                <span class="badge-open">Open Now</span>
-                            <?php else: ?>
-                                <span class="badge-closed">Closed</span>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
-
-                    <h1><?php echo htmlspecialchars($business['name']); ?></h1>
-
-                    <?php if ($review_count > 0): ?>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
-                            <span class="stars" style="margin: 0; font-size: 1.25rem;">
-                                <?php echo str_repeat('★', round($avg_rating)) . str_repeat('☆', 5 - round($avg_rating)); ?>
-                            </span>
-                            <span style="color: var(--text-main); font-weight: 600; font-size: 1.1rem;"><?php echo $avg_rating; ?></span>
-                            <span style="color: var(--text-muted); font-size: 0.95rem;">(<?php echo $review_count; ?> reviews)</span>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="profile-categories" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem;">
-                        <?php foreach ($cat_list as $c): ?>
-                            <span style="background: rgba(14, 165, 233, 0.1); color: var(--accent-color); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(14, 165, 233, 0.2);">
-                                <?php echo htmlspecialchars($c); ?>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div class="profile-actions">
-                        <a href="tel:<?php echo htmlspecialchars($business['phone']); ?>"
-                            aria-label="Call <?php echo htmlspecialchars($business['name']); ?>"
-                            class="btn-primary" style="background-color: var(--button-color);">Call Now</a>
-
-                        <?php if (in_array($business['tier'], ['paid', 'premium']) && !empty($business['website'])): ?>
-                            <a href="<?php echo htmlspecialchars($business['website']); ?>" target="_blank" rel="noopener noreferrer" class="btn-secondary">Visit Website</a>
-                        <?php endif; ?>
-                    </div>
-
-                    <?php
-                    $share_url   = urlencode('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-                    $share_title = urlencode($business['name'] . ' — Recovery Business Hub');
-                    ?>
-                    <div class="share-row">
-                        <p class="share-row__label">Share this business</p>
-                        <div class="share-buttons">
-                            <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $share_url; ?>" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--facebook">📘 Facebook</a>
-                            <a href="https://twitter.com/intent/tweet?url=<?php echo $share_url; ?>&text=<?php echo $share_title; ?>" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--x">𝕏 Share</a>
-                            <button onclick="navigator.clipboard.writeText(window.location.href).then(()=>{ this.classList.add('copied-success'); this.textContent='✅ Copied!'; setTimeout(()=>{ this.classList.remove('copied-success'); this.textContent='🔗 Copy Link'; }, 2000); })" class="share-btn share-btn--copy">🔗 Copy Link</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-body-wrap">
-
-                <div class="about-section">
-                    <?php if (!empty($business['founder_story'])): ?>
-                        <div class="founder-story-block">
-                            <span class="quote-mark">"</span>
-                            <h4 style="color: var(--primary-color); margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">The Comeback Story</h4>
-                            <p><?php echo nl2br(htmlspecialchars($business['founder_story'])); ?></p>
-                        </div>
-                    <?php endif; ?>
-                    <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); display: inline-block;">About Our Business</h3>
-                    <div style="line-height: 1.8; color: var(--text-main); font-size: 1.1rem; white-space: pre-line;">
-                        <?php echo htmlspecialchars($business['description']); ?>
-                    </div>
-
-                    <div class="reviews-section" id="reviews">
-                        <h3 style="color: var(--primary-color); margin-bottom: 2rem;">Customer Reviews</h3>
-
-                        <?php if (empty($reviews)): ?>
-                            <p style="color: var(--text-muted); margin-bottom: 2rem;">No reviews yet. Be the first to share your experience!</p>
+            <div class="profile-main">
+                <div class="profile-header-wrap">
+                    <div class="profile-img-col">
+                        <?php if (!empty($business['logo'])): ?>
+                            <?php $logo_src = '/' . ltrim($business['logo'], '/'); ?>
+                            <img src="<?php echo htmlspecialchars($logo_src); ?>" alt="Logo for <?php echo htmlspecialchars($business['name']); ?>" loading="lazy">
                         <?php else: ?>
-                            <?php foreach ($reviews as $rev): ?>
-                                <div class="review-card">
-                                    <div class="review-header">
-                                        <div class="reviewer-name"><?php echo htmlspecialchars($rev['reviewer_name']); ?></div>
-                                        <div class="review-date"><?php echo date('M j, Y', strtotime($rev['created_at'])); ?></div>
-                                    </div>
-                                    <div class="stars">
-                                        <?php echo str_repeat('★', $rev['rating']) . str_repeat('☆', 5 - $rev['rating']); ?>
-                                    </div>
-                                    <?php if (!empty($rev['comment'])): ?>
-                                        <p class="review-comment"><?php echo nl2br(htmlspecialchars($rev['comment'])); ?></p>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
+                            <?php
+                            $pw = preg_split('/\s+/', trim($business['name']), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                            $pi = '';
+                            foreach ($pw as $w) { $pi .= mb_substr($w, 0, 1); }
+                            ?>
+                            <div class="logo-placeholder" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($pi, 0, 2)); ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="profile-intro-col">
+                        <div class="profile-badges">
+                            <?php if (!empty($open_jobs)): ?>
+                                <span class="flag-hiring">Hiring</span>
+                            <?php endif; ?>
+
+                            <?php if (!empty($business['is_verified'])): ?>
+                                <span class="badge-verified">Verified</span>
+                            <?php endif; ?>
+
+                            <?php if (!empty($parsed_hours)): ?>
+                                <?php if ($is_open_now): ?>
+                                    <span class="badge-open">Open now</span>
+                                <?php else: ?>
+                                    <span class="badge-closed">Closed</span>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+
+                        <h1><?php echo htmlspecialchars($business['name']); ?></h1>
+
+                        <?php if ($review_count > 0): ?>
+                            <div class="rating-line">
+                                <span class="stars" aria-hidden="true"><?php echo str_repeat('★', round($avg_rating)) . str_repeat('☆', 5 - round($avg_rating)); ?></span>
+                                <strong><?php echo $avg_rating; ?></strong>
+                                <span class="tag-card__meta">(<?php echo $review_count; ?> review<?php echo $review_count != 1 ? 's' : ''; ?>)</span>
+                            </div>
                         <?php endif; ?>
 
-                        <div class="review-form-container">
-                            <h3>Leave a Review</h3>
-                            <?php echo $review_message; ?>
-                            <form method="POST" action="#reviews" style="display: flex; flex-direction: column; gap: 1rem;">
-                                <input type="hidden" name="submit_review" value="1">
-                                <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+                        <div class="chip-row profile-categories">
+                            <?php foreach ($cat_list as $c): ?>
+                                <span class="category-tag"><?php echo htmlspecialchars($c); ?></span>
+                            <?php endforeach; ?>
+                        </div>
 
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Your Name *</label>
-                                    <input type="text" name="reviewer_name" required style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #CBD5E1;">
-                                </div>
+                        <div class="profile-actions">
+                            <?php if (!empty($business['phone'])): ?>
+                                <a href="tel:<?php echo htmlspecialchars($business['phone']); ?>"
+                                    aria-label="Call <?php echo htmlspecialchars($business['name']); ?>"
+                                    class="btn-primary">Call now</a>
+                            <?php endif; ?>
 
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Rating *</label>
-                                    <fieldset style="border: none; padding: 0; margin: 0;">
-                                        <legend style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Rating *</legend>
-                                        <div class="star-rating">
-                                            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">★</label>
-                                            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">★</label>
-                                            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">★</label>
-                                            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">★</label>
-                                            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">★</label>
-                                        </div>
-                                    </fieldset>
-                                </div>
+                            <?php if (!empty($business['website'])): ?>
+                                <a href="<?php echo htmlspecialchars($business['website']); ?>" target="_blank" rel="noopener noreferrer" class="btn-secondary">Visit website</a>
+                            <?php endif; ?>
+                        </div>
 
-                                <div>
-                                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Comment (Optional)</label>
-                                        <span id="char-count" style="font-size: 0.8rem; color: var(--text-muted);">0 / 500</span>
-                                    </div>
-                                    <textarea name="comment" id="review-comment" rows="4" maxlength="500" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color);"></textarea>
-                                </div>
-
-                                <script>
-                                    const textarea = document.getElementById('review-comment');
-                                    const charCount = document.getElementById('char-count');
-                                    function updateCharCount() {
-                                        charCount.textContent = textarea.value.length + ' / 500';
-                                    }
-                                    updateCharCount();
-                                    textarea.addEventListener('input', updateCharCount);
-                                </script>
-
-                                <button type="submit" class="btn-primary" style="margin-top: 0.5rem;">Submit Review</button>
-                            </form>
+                        <?php
+                        $share_url   = urlencode('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+                        $share_title = urlencode($business['name'] . ' | Recovery Business Hub');
+                        ?>
+                        <div class="share-row">
+                            <p class="share-row__label">Pass it on</p>
+                            <div class="share-buttons">
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $share_url; ?>" target="_blank" rel="noopener noreferrer" class="share-btn">Facebook</a>
+                                <a href="https://twitter.com/intent/tweet?url=<?php echo $share_url; ?>&text=<?php echo $share_title; ?>" target="_blank" rel="noopener noreferrer" class="share-btn">X</a>
+                                <button type="button" onclick="navigator.clipboard.writeText(window.location.href).then(()=>{ this.classList.add('copied-success'); this.textContent='Copied'; setTimeout(()=>{ this.classList.remove('copied-success'); this.textContent='Copy link'; }, 2000); })" class="share-btn share-btn--copy">Copy link</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="contact-sidebar">
-                    <div class="profile-contact-box">
-                        <h4>Location & Contact</h4>
-                        <p><strong>📍 Address:</strong><br><?php
+                <div class="profile-body-wrap">
+
+                    <div class="about-section">
+                        <?php if (!empty($business['founder_story'])): ?>
+                            <div class="founder-story-block">
+                                <h4>Their story</h4>
+                                <p><?php echo nl2br(htmlspecialchars($business['founder_story'])); ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <h3>About</h3>
+                        <div class="profile-description"><?php echo htmlspecialchars($business['description']); ?></div>
+
+                        <?php if (!empty($open_jobs)): ?>
+                            <div class="profile-jobs" id="jobs">
+                                <h3>Open jobs</h3>
+                                <div class="card-grid">
+                                    <?php foreach ($open_jobs as $oj): ?>
+                                        <?php echo rbh_job_card($oj); ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="reviews-section" id="reviews">
+                            <h3>Reviews</h3>
+
+                            <?php if (empty($reviews)): ?>
+                                <p class="tag-card__meta">No reviews yet. Been a customer? Leave the first one.</p>
+                            <?php else: ?>
+                                <?php foreach ($reviews as $rev): ?>
+                                    <div class="review-card">
+                                        <div class="review-header">
+                                            <div class="reviewer-name"><?php echo htmlspecialchars($rev['reviewer_name']); ?></div>
+                                            <div class="review-date"><?php echo date('M j, Y', strtotime($rev['created_at'])); ?></div>
+                                        </div>
+                                        <div class="stars" aria-label="<?php echo (int)$rev['rating']; ?> out of 5 stars">
+                                            <?php echo str_repeat('★', $rev['rating']) . str_repeat('☆', 5 - $rev['rating']); ?>
+                                        </div>
+                                        <?php if (!empty($rev['comment'])): ?>
+                                            <p class="review-comment"><?php echo nl2br(htmlspecialchars($rev['comment'])); ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+
+                            <div class="review-form-container">
+                                <h3>Leave a review</h3>
+                                <?php echo $review_message; ?>
+                                <form method="POST" action="#reviews">
+                                    <input type="hidden" name="submit_review" value="1">
+                                    <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+
+                                    <div class="form-group">
+                                        <label for="reviewer_name">Your name</label>
+                                        <input type="text" id="reviewer_name" name="reviewer_name" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <fieldset>
+                                            <legend>Rating</legend>
+                                            <div class="star-rating">
+                                                <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">★</label>
+                                                <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">★</label>
+                                                <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">★</label>
+                                                <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">★</label>
+                                                <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">★</label>
+                                            </div>
+                                        </fieldset>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="label-row">
+                                            <label for="review-comment">Comment (optional)</label>
+                                            <span id="char-count" class="char-count">0 / 500</span>
+                                        </div>
+                                        <textarea name="comment" id="review-comment" rows="4" maxlength="500"></textarea>
+                                    </div>
+
+                                    <script>
+                                        const textarea = document.getElementById('review-comment');
+                                        const charCount = document.getElementById('char-count');
+                                        function updateCharCount() {
+                                            charCount.textContent = textarea.value.length + ' / 500';
+                                        }
+                                        updateCharCount();
+                                        textarea.addEventListener('input', updateCharCount);
+                                    </script>
+
+                                    <button type="submit" class="btn-secondary">Submit review</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="contact-sidebar">
+                        <div class="profile-contact-box">
+                            <h4>Location and contact</h4>
+                            <p><strong>Address</strong><br><?php
                                                             $loc = [];
                                                             if (!empty($business['address'])) $loc[] = $business['address'];
                                                             if (!empty($business['city'])) $loc[] = $business['city'];
                                                             if (!empty($business['state'])) $loc[] = $business['state'];
-                                                            echo !empty($loc) ? htmlspecialchars(implode(', ', $loc)) : 'None provided';
+                                                            echo !empty($loc) ? htmlspecialchars(implode(', ', $loc)) : 'Not listed';
                                                             ?></p>
-                        <p><strong>📞 Phone:</strong><br><?php echo htmlspecialchars($business['phone']); ?></p>
-                        <?php if (in_array($business['tier'], ['paid', 'premium']) && !empty($business['email'])): ?>
-                            <p><strong>✉️ Email:</strong><br><a href="mailto:<?php echo htmlspecialchars($business['email']); ?>" style="color: var(--button-color);"><?php echo htmlspecialchars($business['email']); ?></a></p>
-                        <?php endif; ?>
+                            <?php if (!empty($business['phone'])): ?>
+                                <p><strong>Phone</strong><br><?php echo htmlspecialchars($business['phone']); ?></p>
+                            <?php endif; ?>
 
-                        <?php if (!empty($parsed_hours)): ?>
-                            <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #E2E8F0;">
-                            <h4>Business Hours</h4>
-                            <ul class="hours-list">
-                                <?php
-                                $days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                                $current_day = date('l');
-                                foreach ($days_order as $day):
-                                    if (!isset($parsed_hours[$day])) continue;
+                            <?php if (!empty($parsed_hours)): ?>
+                                <hr>
+                                <h4>Hours</h4>
+                                <ul class="hours-list">
+                                    <?php
+                                    $days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                                    $current_day = date('l');
+                                    foreach ($days_order as $day):
+                                        if (!isset($parsed_hours[$day])) continue;
 
-                                    $data = $parsed_hours[$day];
-                                    $is_today = ($day === $current_day);
+                                        $data = $parsed_hours[$day];
+                                        $is_today = ($day === $current_day);
 
-                                    if ($data['is_closed']) {
-                                        $display_time = 'Closed';
-                                    } else {
-                                        $open = date("g:i A", strtotime($data['open']));
-                                        $close = date("g:i A", strtotime($data['close']));
-                                        $display_time = "$open - $close";
-                                    }
-                                ?>
-                                    <li class="<?php echo $is_today ? 'hours-today' : ''; ?>">
-                                        <span><?php echo $day; ?></span>
-                                        <span style="<?php echo $data['is_closed'] ? 'color: #EF4444; font-weight: 500;' : ''; ?>"><?php echo $display_time; ?></span>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-
-                        <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #E2E8F0;">
-                        <p style="font-size: 0.9rem; color: var(--text-muted);">Support a recovery-owned business. Every purchase helps fuel a comeback.</p>
+                                        if ($data['is_closed']) {
+                                            $display_time = 'Closed';
+                                        } else {
+                                            $open = date("g:i A", strtotime($data['open']));
+                                            $close = date("g:i A", strtotime($data['close']));
+                                            $display_time = "$open to $close";
+                                        }
+                                    ?>
+                                        <li class="<?php echo $is_today ? 'hours-today' : ''; ?>">
+                                            <span><?php echo $day; ?></span>
+                                            <span class="<?php echo $data['is_closed'] ? 'hours-closed' : ''; ?>"><?php echo $display_time; ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
-                    <?php
-                    $mapQuery = [];
-                    if (!empty($business['address'])) $mapQuery[] = $business['address'];
-                    if (!empty($business['city'])) $mapQuery[] = $business['city'];
-                    if (!empty($business['state'])) $mapQuery[] = $business['state'];
-                    $mapStr = implode(', ', $mapQuery);
-                    ?>
-                    <?php if ($business['tier'] === 'premium' && !empty($mapStr)): ?>
-                        <div class="profile-map-wrap">
-                            <iframe
-                                loading="lazy"
-                                referrerpolicy="no-referrer-when-downgrade"
-                                src="https://maps.google.com/maps?q=<?php echo urlencode($mapStr); ?>&t=&z=13&ie=UTF8&iwloc=&output=embed">
-                            </iframe>
-                        </div>
-                    <?php endif; ?>
                 </div>
-
             </div>
         </article>
 
     <?php else: ?>
-        <div style="text-align: center; padding: 5rem;">
-            <h2>Business Not Found</h2>
-            <p>This listing may be pending or removed.</p>
-            <a href="/">Back to Home</a>
+        <div class="empty-state empty-state--center">
+            <?php echo rbh_blank_tag(); ?>
+            <h1>Business not found</h1>
+            <p>This listing may be pending review, or it's been taken down.</p>
+            <a href="/businesses" class="btn-secondary">See all businesses</a>
         </div>
     <?php endif; ?>
 

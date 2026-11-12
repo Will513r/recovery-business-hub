@@ -1,9 +1,9 @@
 <?php
-$seo_title       = isset($page_title)       ? htmlspecialchars($page_title) . ' | Recovery Business Hub' : 'Recovery Business Hub — Real Businesses. Real Comebacks.';
-$seo_description = isset($page_description) ? htmlspecialchars($page_description) : 'Find services run by people in recovery. Browse our directory of recovery-owned businesses and support second chances.';
+$seo_title       = isset($page_title)       ? htmlspecialchars($page_title) . ' | Recovery Business Hub' : 'Recovery Business Hub | Second-chance jobs and recovery-owned businesses';
+$seo_description = isset($page_description) ? htmlspecialchars($page_description) : 'Jobs from employers who hire people in recovery or with a record, and a list of businesses owned by people in recovery. Cincinnati, Dayton and Northern Kentucky first. Free.';
 
-// 1. Define your default site logo (Absolute URL)
-$default_image_url = "https://www.recoverybusinesshub.com/Recovery_Business_Hub_Logo.webp";
+// 1. Default share image (absolute URL)
+$default_image_url = "https://www.recoverybusinesshub.com/og-default.png";
 
 // 2. If a specific page (like profile.php) provided an image, use it. Otherwise, use default.
 $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
@@ -12,7 +12,6 @@ $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
 $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?'));
 ?>
 <!DOCTYPE html>
-<!-- deployed 2026-07-05 20:48 -->
 <html lang="en">
 
 <head>
@@ -54,7 +53,7 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
             "@type" => "Organization",
             "name" => "Recovery Business Hub",
             "url" => "https://www.recoverybusinesshub.com/",
-            "logo" => "https://www.recoverybusinesshub.com/Recovery_Business_Hub_Logo.webp",
+            "logo" => "https://www.recoverybusinesshub.com/logo-keytag.png",
             "sameAs" => [
                 "https://www.facebook.com/profile.php?id=61575303073968",
                 "https://www.youtube.com/channel/UC9QdgPlsyMsmk37yRq_V98w"
@@ -76,29 +75,31 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
 <body>
 
     <header>
-        <nav class="navbar">
-            <a href="/" class="logo" aria-label="Recovery Business Hub — Home">
-                <!-- Inline SVG so it renders in the site's Montserrat font -->
-                <svg width="230" height="46" viewBox="0 0 320 64" role="img" aria-hidden="true" focusable="false">
-                    <rect x="3.5" y="7.5" width="49" height="49" rx="12" fill="#FFFFFF" stroke="#0C1B33" stroke-width="3"/>
-                    <text x="28" y="45" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="32" fill="#1766C2">R</text>
-                    <text x="68" y="30" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="20" fill="#0C1B33">RECOVERY</text>
-                    <text x="68" y="50" font-family="Montserrat, Arial, sans-serif" font-weight="600" font-size="14" letter-spacing="3" fill="#1766C2">BUSINESS HUB</text>
+        <nav class="navbar" aria-label="Main">
+            <a href="/" class="logo" aria-label="Recovery Business Hub, home">
+                <svg viewBox="0 0 340 44" role="img" aria-hidden="true" focusable="false">
+                    <path d="M22 4 H20 A16 16 0 0 0 4 20 V24 A16 16 0 0 0 20 40 H22 Z" fill="#1E8A4C" stroke="#141414" stroke-width="2.5" stroke-linejoin="round"/>
+                    <circle cx="15" cy="22" r="4" fill="#ECECE8" stroke="#141414" stroke-width="2.5"/>
+                    <path d="M22 4 H48 A4 4 0 0 1 52 8 V36 A4 4 0 0 1 48 40 H22 Z" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M29 16 H44 M29 25 H38" stroke="#141414" stroke-width="2.5" stroke-linecap="round"/>
+                    <text x="64" y="30" font-family="'Bricolage Grotesque', Arial, sans-serif" font-weight="800" font-size="24" letter-spacing="-0.4" fill="#141414">recovery business hub</text>
                 </svg>
             </a>
 
-            <button class="menu-toggle" aria-label="Open Navigation Menu">☰</button>
+            <button class="menu-toggle" aria-label="Open navigation menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6 H21 M3 12 H21 M3 18 H21" stroke="#141414" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>
+            </button>
 
             <div class="nav-overlay"></div>
 
             <ul class="nav-links">
                 <li class="close-menu-wrapper">
-                    <button class="close-menu" aria-label="Close Menu">&times;</button>
+                    <button class="close-menu" aria-label="Close menu">&times;</button>
                 </li>
-                <li><a href="/">Home</a></li>
-                <li><a href="/about.php">About</a></li>
-                <li><a href="/pricing.php">Pricing</a></li>
-                <li><a href="/add-business.php" class="btn-primary">Add a Business</a></li>
+                <li><a href="/jobs">Jobs</a></li>
+                <li><a href="/businesses">Businesses</a></li>
+                <li><a href="/add-business">List your business</a></li>
+                <li><a href="/post-job" class="btn-secondary">Post a job</a></li>
             </ul>
         </nav>
     </header>

@@ -2,8 +2,8 @@
 // edit-listing.php
 // Owner-facing edit form, reached only through a magic link from
 // manage-listing.php. Owners can update contact info, hours, logo, and
-// descriptions. They can't touch name, tier, status, or verification —
-// those stay admin-only in edit-business.php.
+// descriptions. They can't touch name, status, or verification.
+// Those stay admin-only in edit-business.php.
 require_once 'config.php'; // starts the session
 
 // 1. VALIDATE THE TOKEN
@@ -20,12 +20,12 @@ if (preg_match('/^[a-f0-9]{64}$/', $token)) {
 }
 
 if (!$business) {
-    $page_title = 'Link Expired';
+    $page_title = 'Link expired';
     include 'header.php';
-    echo "<main class='form-container' style='text-align: center;'>
-            <h2>This link isn't valid anymore</h2>
-            <p>Edit links work for 48 hours. Request a fresh one and you're back in business.</p>
-            <a href='/manage-listing.php' class='btn-primary'>Get a New Link</a>
+    echo "<main class='form-container'>
+            <h1>This link isn't valid anymore</h1>
+            <p>Edit links work for 48 hours. Ask for a fresh one and you're back in.</p>
+            <a href='/manage-listing' class='btn-secondary'>Get a new link</a>
           </main>";
     include 'footer.php';
     exit;
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $description_len = strlen($description);
     if ($description_len < 30 || $description_len > 3000) {
-        $message = "<p style='color: red; text-align: center;'>Business description must be between 30 and 3000 characters.</p>";
+        $message = "<p class='form-note form-note--error'>The description needs to be 30 to 3000 characters.</p>";
     } else {
         $uploaded = handle_logo_upload();
         if ($uploaded !== false) {
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("sssssssssssi", $category_json, $address, $city, $state, $phone, $email, $logo_path, $website, $description, $founder_story, $hours_json, $business['id']);
 
         if ($stmt->execute()) {
-            $message = "<p style='color: var(--color-success); text-align: center; font-weight: bold;'>Your listing is updated. Changes are live now.</p>";
+            $message = "<p class='form-note form-note--success'>Saved. Your changes are live now.</p>";
 
             // Refresh local copy so the form shows the saved values
             $business = array_merge($business, [
@@ -97,19 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "The owner of $safe_name just updated their listing through a magic link.\n\nReview it here: https://www.recoverybusinesshub.com/business/{$business['slug']}/"
             );
         } else {
-            $message = "<p style='color: red; text-align: center;'>Error saving changes. Please try again.</p>";
+            $message = "<p class='form-note form-note--error'>That didn't save. Try again.</p>";
         }
         $stmt->close();
     }
 }
 
-$page_title = 'Edit Your Listing';
+$page_title = 'Edit your listing';
 include 'header.php';
 ?>
 
 <main class="form-container">
-    <h2>Edit: <?php echo htmlspecialchars($business['name']); ?></h2>
-    <p>Update your listing below. Changes go live as soon as you save. Need your business name changed? Email recoverybusinesshub@gmail.com.</p>
+    <h1>Edit <?php echo htmlspecialchars($business['name']); ?></h1>
+    <p>Change what you want and save. Changes go live right away. To change your business name, write to recoverybusinesshub@gmail.com.</p>
 
     <?php echo $message; ?>
 
@@ -118,7 +118,7 @@ include 'header.php';
         <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
 
         <div class="form-group">
-            <label>Categories * (Select all that apply)</label>
+            <span class="form-label">Categories * (pick all that apply)</span>
             <div class="category-checkbox-grid">
                 <?php
                 $current_cat_decoded = json_decode($business['category'], true) ?? [];
@@ -137,19 +137,19 @@ include 'header.php';
         </div>
 
         <div class="form-group">
-            <label>Street Address</label>
-            <input type="text" name="address" value="<?php echo htmlspecialchars($business['address'] ?? ''); ?>">
+            <label for="address">Street address</label>
+            <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($business['address'] ?? ''); ?>">
         </div>
 
-        <div style="display: flex; gap: 15px;">
-            <div class="form-group" style="flex: 2;">
-                <label>City</label>
-                <input type="text" name="city" value="<?php echo htmlspecialchars($business['city'] ?? ''); ?>">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" value="<?php echo htmlspecialchars($business['city'] ?? ''); ?>">
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>State</label>
-                <select name="state">
-                    <option value="">Select...</option>
+            <div class="form-group">
+                <label for="state">State</label>
+                <select id="state" name="state">
+                    <option value="">Select</option>
                     <?php foreach ($states_list as $st): ?>
                         <option value="<?php echo htmlspecialchars($st); ?>" <?php if (($business['state'] ?? '') == $st) echo 'selected'; ?>>
                             <?php echo htmlspecialchars($st); ?>
@@ -160,36 +160,36 @@ include 'header.php';
         </div>
 
         <div class="form-group">
-            <label>Phone Number</label>
-            <input type="text" name="phone" value="<?php echo htmlspecialchars($business['phone']); ?>">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($business['phone']); ?>">
         </div>
 
         <div class="form-group">
-            <label>Email Address</label>
-            <input type="email" name="email" value="<?php echo htmlspecialchars($business['email'] ?? ''); ?>">
-            <small>This is also the email that receives edit links, so keep it current.</small>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($business['email'] ?? ''); ?>">
+            <small>Edit links go to this email, so keep it current.</small>
         </div>
 
-        <div class="form-group" style="border: 1px dashed var(--border-color); padding: 1.5rem; background: var(--accent-bg);">
-            <label for="logo_file">Business Logo / Image</label>
+        <div class="form-group form-logo-preview">
+            <label for="logo_file">Logo or photo</label>
             <?php if (!empty($business['logo'])): ?>
-                <div style="margin-bottom: 1rem;">
-                    <img src="/<?php echo htmlspecialchars(ltrim($business['logo'], '/')); ?>" alt="Current Logo" style="max-height: 80px; border-radius: 8px;">
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Current Image</p>
+                <div>
+                    <img src="/<?php echo htmlspecialchars(ltrim($business['logo'], '/')); ?>" alt="Your current logo">
+                    <small>Current image</small>
                 </div>
             <?php endif; ?>
             <input type="file" id="logo_file" name="logo_file" accept=".jpg,.jpeg,.png,.webp">
-            <small>Leave blank to keep the current image. Upload a new image (Max 2MB) to overwrite it.</small>
+            <small>Leave it blank to keep the current image. A new one (up to 2MB) replaces it.</small>
         </div>
 
         <div class="form-group">
-            <label>Business Website</label>
-            <input type="url" name="website" value="<?php echo htmlspecialchars($business['website'] ?? ''); ?>" placeholder="https://yourbusiness.com">
+            <label for="website">Website</label>
+            <input type="url" id="website" name="website" value="<?php echo htmlspecialchars($business['website'] ?? ''); ?>" placeholder="https://yourbusiness.com">
         </div>
 
         <div class="form-group">
-            <label>Business Hours</label>
-            <small style="margin-top: 0; margin-bottom: 0.5rem; display: block;">When is your business open?</small>
+            <span class="form-label">Hours</span>
+            <small>Tick Closed for any day you're shut.</small>
             <div class="schedule-builder">
                 <?php
                 $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -205,7 +205,7 @@ include 'header.php';
                     <div class="schedule-row">
                         <div class="schedule-day"><?php echo $day; ?></div>
                         <div class="schedule-inputs">
-                            <label style="margin: 0; font-weight: normal; font-size: 0.9rem;">
+                            <label>
                                 <input type="checkbox" name="hours[<?php echo $day; ?>][is_closed]" value="1" <?php echo $is_closed; ?> onchange="toggleHours(this)"> Closed
                             </label>
                             <input type="time" name="hours[<?php echo $day; ?>][open]" class="time-input" value="<?php echo $open; ?>" <?php echo $disabled; ?>>
@@ -229,16 +229,16 @@ include 'header.php';
         </script>
 
         <div class="form-group">
-            <label>Business Description *</label>
-            <textarea name="description" rows="5" required minlength="30"><?php echo htmlspecialchars($business['description']); ?></textarea>
+            <label for="description">About the business *</label>
+            <textarea id="description" name="description" rows="5" required minlength="30"><?php echo htmlspecialchars($business['description']); ?></textarea>
         </div>
 
         <div class="form-group">
-            <label>Comeback Story (Optional)</label>
-            <textarea name="founder_story" rows="3" placeholder="Your recovery story, shown as a featured quote on your profile."><?php echo htmlspecialchars($business['founder_story'] ?? ''); ?></textarea>
+            <label for="founder_story">Your story (optional)</label>
+            <textarea id="founder_story" name="founder_story" rows="3" placeholder="Share as much or as little as you want. Leave it blank and nothing about your recovery shows."><?php echo htmlspecialchars($business['founder_story'] ?? ''); ?></textarea>
         </div>
 
-        <button type="submit" class="btn-submit">Save Changes</button>
+        <button type="submit" class="btn-submit">Save changes</button>
     </form>
 </main>
 

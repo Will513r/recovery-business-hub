@@ -43,17 +43,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Same message either way, on purpose
-    $message = "<p style='color: var(--color-success); font-weight: bold; text-align: center;'>If that email is on a listing, an edit link is on its way. Check your inbox (and spam folder).</p>";
+    $message = "<p class='form-note form-note--success'>If that email is on a listing, an edit link is on its way. Check your inbox and your spam folder.</p>";
 }
 
-$page_title       = 'Manage Your Listing';
-$page_description = 'Update your Recovery Business Hub listing. Enter the email on your listing and we\'ll send you a secure edit link.';
+$page_title       = 'Manage your listing';
+$page_description = 'Update your Recovery Business Hub listing. Enter the email on your listing and we\'ll send you an edit link.';
 include 'header.php';
 ?>
 
 <main class="form-container">
-    <h2>Manage Your Listing</h2>
-    <p>Enter the email address on your listing and we'll send you a secure link to edit it. The link works for 48 hours.</p>
+    <h1>Manage your listing</h1>
+    <p>Enter the email on your listing and we'll send you a link to edit it. The link works for 48 hours.</p>
 
     <?php echo $message; ?>
 
@@ -62,9 +62,9 @@ include 'header.php';
         <div class="form-group">
             <label for="email">Email on your listing</label>
             <input type="email" id="email" name="email" required placeholder="hello@yourbusiness.com">
-            <small>This has to match the email we have on file. Not sure which one that is? Reach out at recoverybusinesshub@gmail.com.</small>
+            <small>It has to match the email on your listing. Not sure which one that is? Write to recoverybusinesshub@gmail.com.</small>
         </div>
-        <button type="submit" class="btn-submit">Send My Edit Link</button>
+        <button type="submit" class="btn-submit">Send my edit link</button>
     </form>
 </main>
 

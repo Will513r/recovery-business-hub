@@ -1,4 +1,6 @@
-<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="3" width="58" height="58" rx="14" fill="#FFFFFF" stroke="#0C1B33" stroke-width="5"/>
-    <text x="32" y="47" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="38" fill="#1766C2">R</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Recovery Business Hub key tag">
+  <path d="M26 14 H22 A18 18 0 0 0 4 32 A18 18 0 0 0 22 50 H26 Z" fill="#1E8A4C" stroke="#141414" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="17" cy="32" r="5" fill="#ECECE8" stroke="#141414" stroke-width="3"/>
+  <path d="M26 14 H56 A4 4 0 0 1 60 18 V46 A4 4 0 0 1 56 50 H26 Z" fill="#FFFFFF" stroke="#141414" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M34 26 H50 M34 34 H44" stroke="#141414" stroke-width="3" stroke-linecap="round"/>
 </svg>

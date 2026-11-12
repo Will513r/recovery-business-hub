@@ -21,7 +21,7 @@ $stmt->close();
 
 // If someone types a random ID in the URL that doesn't exist
 if (!$business) {
-    die("<h2 style='text-align:center; padding: 2rem;'>Business not found. <a href='admin.php'>Go back</a></h2>");
+    die("<h2 style='text-align:center; padding: 2rem; font-family: Arial, sans-serif;'>Business not found. <a href='admin.php'>Go back</a></h2>");
 }
 
 // 3. IF THE FORM IS SUBMITTED: Update the database
@@ -52,9 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $description = trim($_POST['description'] ?? '');
     $founder_story = trim($_POST['founder_story'] ?? '');
 
-    $allowed_tiers    = ['free', 'paid', 'premium'];
     $allowed_statuses = ['pending', 'approved', 'rejected'];
-    $tier   = in_array($_POST['tier']   ?? '', $allowed_tiers)    ? $_POST['tier']   : 'free';
+    $tier   = 'free'; // no plans anymore; the column stays
     $status = in_array($_POST['status'] ?? '', $allowed_statuses) ? $_POST['status'] : 'pending';
 
     $uploaded = handle_logo_upload();
@@ -76,13 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($stmt) {
         $stmt->bind_param("ssssssssssssssi", $name, $category_json, $address, $city, $state, $phone, $email, $logo_path, $website, $description, $founder_story, $hours_json, $tier, $status, $business_id);
         if ($stmt->execute()) {
-            $message = "<p style='color: var(--accent-color); text-align: center; font-weight: bold;'>Business updated successfully!</p>";
+            $message = "<p class='form-note form-note--success'>Saved.</p>";
             $business['logo'] = $logo_path;
             $business['hours'] = $hours_json;
             $business['category'] = $category_json;
             $business['founder_story'] = $founder_story;
         } else {
-            $message = "<p style='color: red; text-align: center;'>Error updating business.</p>";
+            $message = "<p class='form-note form-note--error'>That didn't save.</p>";
         }
         $stmt->close();
     }
@@ -92,23 +91,21 @@ include 'header.php';
 ?>
 
 <main class="form-container">
-    <div style="margin-bottom: 1rem;">
-        <a href="admin.php" style="color: var(--primary-color); font-weight: bold;">&larr; Back to Dashboard</a>
-    </div>
+    <a href="admin.php" class="back-link">&larr; Back to dashboard</a>
 
-    <h2>Edit Business: <?php echo htmlspecialchars($business['name']); ?></h2>
+    <h1>Edit <?php echo htmlspecialchars($business['name']); ?></h1>
 
     <?php echo $message; ?>
 
     <form method="POST" class="business-form" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
         <div class="form-group">
-            <label>Business Name</label>
-            <input type="text" name="name" required value="<?php echo htmlspecialchars($business['name']); ?>">
+            <label for="name">Business name</label>
+            <input type="text" id="name" name="name" required value="<?php echo htmlspecialchars($business['name']); ?>">
         </div>
 
         <div class="form-group">
-            <label>Categories *</label>
+            <span class="form-label">Categories *</span>
             <div class="category-checkbox-grid">
                 <?php
                 // FALLBACK: Safe JSON decoding
@@ -132,19 +129,19 @@ include 'header.php';
         </div>
 
         <div class="form-group">
-            <label>Street Address</label>
-            <input type="text" name="address" value="<?php echo htmlspecialchars($business['address'] ?? ''); ?>">
+            <label for="address">Street address</label>
+            <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($business['address'] ?? ''); ?>">
         </div>
 
-        <div style="display: flex; gap: 15px;">
-            <div class="form-group" style="flex: 2;">
-                <label>City</label>
-                <input type="text" name="city" value="<?php echo htmlspecialchars($business['city'] ?? ''); ?>">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" value="<?php echo htmlspecialchars($business['city'] ?? ''); ?>">
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>State</label>
-                <select name="state">
-                    <option value="">Select...</option>
+            <div class="form-group">
+                <label for="state">State</label>
+                <select id="state" name="state">
+                    <option value="">Select</option>
                     <?php foreach ($states_list as $st): ?>
                         <option value="<?php echo htmlspecialchars($st); ?>" <?php if (($business['state'] ?? '') == $st) echo 'selected'; ?>>
                             <?php echo htmlspecialchars($st); ?>
@@ -155,35 +152,35 @@ include 'header.php';
         </div>
 
         <div class="form-group">
-            <label>Phone Number</label>
-            <input type="text" name="phone" value="<?php echo htmlspecialchars($business['phone']); ?>">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($business['phone']); ?>">
         </div>
 
         <div class="form-group">
-            <label>Email Address</label>
-            <input type="email" name="email" value="<?php echo htmlspecialchars($business['email'] ?? ''); ?>" placeholder="hello@yourbusiness.com">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($business['email'] ?? ''); ?>" placeholder="hello@yourbusiness.com">
         </div>
 
-        <div class="form-group" style="border: 1px dashed var(--border-color); padding: 1.5rem; background: var(--surface-bg);">
-            <label for="logo_file">Business Logo / Image</label>
+        <div class="form-group form-logo-preview">
+            <label for="logo_file">Logo or photo</label>
             <?php if (!empty($business['logo'])): ?>
-                <div style="margin-bottom: 1rem;">
-                    <img src="<?php echo htmlspecialchars($business['logo']); ?>" alt="Current Logo" style="max-height: 80px; border-radius: 8px;">
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Current Image</p>
+                <div>
+                    <img src="<?php echo htmlspecialchars($business['logo']); ?>" alt="Current logo">
+                    <small>Current image</small>
                 </div>
             <?php endif; ?>
             <input type="file" id="logo_file" name="logo_file" accept=".jpg,.jpeg,.png,.webp">
-            <small>Leave blank to keep the current image. Upload a new image (Max 2MB) to overwrite it.</small>
+            <small>Leave it blank to keep the current image. A new one (up to 2MB) replaces it.</small>
         </div>
 
         <div class="form-group">
-            <label>Business Website</label>
-            <input type="url" name="website" value="<?php echo htmlspecialchars($business['website'] ?? ''); ?>" placeholder="https://yourbusiness.com">
+            <label for="website">Website</label>
+            <input type="url" id="website" name="website" value="<?php echo htmlspecialchars($business['website'] ?? ''); ?>" placeholder="https://yourbusiness.com">
         </div>
 
         <div class="form-group">
-            <label>Business Hours</label>
-            <small style="margin-top: 0; margin-bottom: 0.5rem; display: block;">When is this business open?</small>
+            <span class="form-label">Hours</span>
+            <small>Tick Closed for any day they're shut.</small>
             <div class="schedule-builder">
                 <?php
                 $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -199,7 +196,7 @@ include 'header.php';
                     <div class="schedule-row">
                         <div class="schedule-day"><?php echo $day; ?></div>
                         <div class="schedule-inputs">
-                            <label style="margin: 0; font-weight: normal; font-size: 0.9rem;">
+                            <label>
                                 <input type="checkbox" name="hours[<?php echo $day; ?>][is_closed]" value="1" <?php echo $is_closed; ?> onchange="toggleHours(this)"> Closed
                             </label>
                             <input type="time" name="hours[<?php echo $day; ?>][open]" class="time-input" value="<?php echo $open; ?>" <?php echo $disabled; ?>>
@@ -223,30 +220,21 @@ include 'header.php';
         </script>
 
         <div class="form-group">
-            <label>Business Description</label>
-            <textarea name="description" rows="5" required><?php echo htmlspecialchars($business['description']); ?></textarea>
+            <label for="description">About the business</label>
+            <textarea id="description" name="description" rows="5" required><?php echo htmlspecialchars($business['description']); ?></textarea>
         </div>
 
         <div class="form-group">
-            <label>Comeback Story (Optional)</label>
-            <textarea name="founder_story" rows="3" placeholder="The owner's recovery story, shown as a featured quote on the profile."><?php echo htmlspecialchars($business['founder_story'] ?? ''); ?></textarea>
+            <label for="founder_story">Owner's story (optional)</label>
+            <textarea id="founder_story" name="founder_story" rows="3" placeholder="Only what the owner chose to share."><?php echo htmlspecialchars($business['founder_story'] ?? ''); ?></textarea>
         </div>
 
-        <div style="background-color: var(--accent-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
-            <h3 style="margin-bottom: 1rem; color: var(--accent-color);">Admin Controls</h3>
+        <div class="form-logo-preview" style="margin-bottom: 1.5rem;">
+            <h3>Admin controls</h3>
 
             <div class="form-group">
-                <label>Subscription Tier</label>
-                <select name="tier">
-                    <option value="free" <?php if ($business['tier'] == 'free') echo 'selected'; ?>>Free</option>
-                    <option value="paid" <?php if ($business['tier'] == 'paid') echo 'selected'; ?>>Featured (Paid)</option>
-                    <option value="premium" <?php if ($business['tier'] == 'premium') echo 'selected'; ?>>Premium Partner</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Listing Status</label>
-                <select name="status">
+                <label for="status">Listing status</label>
+                <select id="status" name="status">
                     <option value="pending" <?php if ($business['status'] == 'pending') echo 'selected'; ?>>Pending</option>
                     <option value="approved" <?php if ($business['status'] == 'approved') echo 'selected'; ?>>Approved</option>
                     <option value="rejected" <?php if ($business['status'] == 'rejected') echo 'selected'; ?>>Rejected</option>
@@ -254,7 +242,7 @@ include 'header.php';
             </div>
         </div>
 
-        <button type="submit" class="btn-submit">Save Changes</button>
+        <button type="submit" class="btn-submit">Save changes</button>
     </form>
 </main>
 

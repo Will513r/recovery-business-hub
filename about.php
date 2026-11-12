@@ -1,49 +1,53 @@
 <?php
 // about.php
 require_once 'config.php';
-$page_title       = 'About Us';
-$page_description = 'The Recovery Business Hub connects communities with businesses built by people in recovery. Learn about our mission and the grit behind every listing.';
+$page_title       = 'About';
+$page_description = 'Recovery Business Hub lists businesses owned by people in recovery and jobs from employers who hire people in recovery or with a record. Cincinnati, Dayton and Northern Kentucky first.';
 include 'header.php';
 ?>
 
 <main class="about-page-wrapper">
-    <article class="about-card">
+    <h1>Businesses and jobs, built for people in recovery.</h1>
 
-        <div class="about-hero-strip">
-            <h1>Pain is Fuel.</h1>
-            <div class="accent-bar"></div>
-        </div>
+    <div class="prose">
+        <p class="lead">
+            Recovery Business Hub does two things. It lists businesses owned by people in recovery. And it lists jobs from employers who've said up front that they'll hire people in recovery or with a record.
+        </p>
 
-        <div class="about-content">
+        <h2>Why both</h2>
+        <p>
+            Owners need workers. People getting back on their feet need work. Customers want somewhere good to spend their money. One site covers all three.
+        </p>
 
-            <div class="mission-statement">
-                <p class="lead-text">
-                    Let's be completely honest: when you're in recovery, the world doesn't exactly line up to hand you second chances. The deck is stacked, the odds are low, and most people expect you to fail.
-                </p>
-                <p>
-                    <strong>But they underestimate the fire that comes from hitting rock bottom.</strong>
-                </p>
-            </div>
+        <h2>Where we're starting</h2>
+        <p>
+            Cincinnati, Dayton and Northern Kentucky. Anyone can list or post. We're just not chasing anyone outside those three areas yet.
+        </p>
 
-            <div class="main-body">
-                <p>
-                    We built the <em>Recovery Business Hub</em> because we know that individuals in recovery make some of the hardest-working, most resilient business owners on the planet. When you've fought your way back from the edge, running a business isn't just about making a buck—it's about survival and proving you can build something real.
-                </p>
+        <h2>Your story is yours</h2>
+        <p>
+            Business owners decide how much of their story to share. We show what an owner gives us and nothing more.
+        </p>
+        <p>
+            Looking for work? You tell us nothing. No account, no record on file. Each job states the employer's hiring policy, and applying is an email to the employer. We get a copy, and we keep nothing on the site.
+        </p>
 
-                <h3>What We Do</h3>
-                <p>
-                    This isn't just a directory; it's a community built on grit. We connect consumers who want to support second chances with the incredible businesses built by people in recovery.
-                </p>
-            </div>
+        <h2>What it costs</h2>
+        <p>
+            Listings and job posts are free to start.
+        </p>
 
-            <div class="about-footer">
-                <a href="add-business.php" class="btn-primary">Join the Directory</a>
-            </div>
+        <h2>Who we are</h2>
+        <p>
+            We're not part of any recovery program or fellowship. Questions? Write to <a href="mailto:recoverybusinesshub@gmail.com">recoverybusinesshub@gmail.com</a>.
+        </p>
+    </div>
 
-        </div>
-    </article>
+    <div class="about-footer">
+        <a href="/jobs" class="btn-secondary">Find work</a>
+        <a href="/businesses" class="btn-secondary">Find a business</a>
+        <a href="/add-business" class="btn-secondary">List your business</a>
+    </div>
 </main>
 
-<?php
-include 'footer.php';
-?>
+<?php include 'footer.php'; ?>

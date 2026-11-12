@@ -17,6 +17,9 @@ RewriteRule ^pricing(\.php)?/?$ / [R=301,L]
 # 0.3 v2: job pages
 RewriteRule ^jobs/([a-z0-9-]+)/?$ job.php?slug=$1 [L,QSA]
 
+# 0.4 v2: branded 404
+ErrorDocument 404 /404.php
+
 # 0.5 Serve the XML sitemap (robots.txt points to /sitemap.xml)
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 

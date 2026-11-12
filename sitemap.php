@@ -15,8 +15,10 @@ echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 // 1. Array of your static core pages
 $static_pages = [
     '/',
+    '/jobs',
+    '/businesses',
+    '/post-job',
     '/about',
-    '/pricing',
     '/add-business'
 ];
 
