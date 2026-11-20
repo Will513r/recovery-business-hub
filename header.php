@@ -3,7 +3,7 @@ $seo_title       = isset($page_title)       ? htmlspecialchars($page_title) . ' 
 $seo_description = isset($page_description) ? htmlspecialchars($page_description) : 'Jobs from employers who hire people in recovery or with a record, and a list of businesses owned by people in recovery. Cincinnati, Dayton and Northern Kentucky first. Free.';
 
 // 1. Default share image (absolute URL)
-$default_image_url = "https://www.recoverybusinesshub.com/og-default.png";
+$default_image_url = "https://www.recoverybusinesshub.com/og-share.png";
 
 // 2. If a specific page (like profile.php) provided an image, use it. Otherwise, use default.
 $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
