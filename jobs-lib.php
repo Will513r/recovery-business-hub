@@ -461,7 +461,8 @@ function rbh_handle_apply(mysqli $conn, array $job): array
 // $action: approve_job | reject_job | close_job
 // ---------------------------------------------------------------------------
 
-function rbh_admin_job_action(mysqli $conn, string $action, int $job_id): void
+// Returns null when the job doesn't exist, else the employer email result (null = no email for this action).
+function rbh_admin_job_action(mysqli $conn, string $action, int $job_id): ?array
 {
     $stmt = $conn->prepare('SELECT * FROM jobs WHERE id = ?');
     $stmt->bind_param('i', $job_id);
@@ -469,9 +470,10 @@ function rbh_admin_job_action(mysqli $conn, string $action, int $job_id): void
     $job = $stmt->get_result()->fetch_assoc();
     $stmt->close();
     if (!$job) {
-        return;
+        return null;
     }
 
+    $mail_sent = null;
     if ($action === 'approve_job') {
         // Link to a listed business when the employer email matches one.
         $biz_id = null;
@@ -489,7 +491,7 @@ function rbh_admin_job_action(mysqli $conn, string $action, int $job_id): void
         $u->execute();
         $u->close();
 
-        rbh_send_email(
+        $mail_sent = rbh_send_email(
             $job['employer_email'],
             'Your job is live: ' . $job['title'],
             "Your job post is up on Recovery Business Hub.\n\n" . RBH_SITE_URL . '/jobs/' . $job['slug'] . "/\n\n"
@@ -500,7 +502,7 @@ function rbh_admin_job_action(mysqli $conn, string $action, int $job_id): void
         $u->bind_param('i', $job_id);
         $u->execute();
         $u->close();
-        rbh_send_email(
+        $mail_sent = rbh_send_email(
             $job['employer_email'],
             'About your job post: ' . $job['title'],
             "Thanks for posting on Recovery Business Hub.\n\nWe couldn't put this one up as written. Reply to this email if you want to know why or send a new version.\n"
@@ -511,5 +513,6 @@ function rbh_admin_job_action(mysqli $conn, string $action, int $job_id): void
         $u->execute();
         $u->close();
     }
-    rbh_log_event('admin_job', ['job_id' => $job_id, 'action' => $action]);
+    rbh_log_event('admin_job', ['job_id' => $job_id, 'action' => $action] + ($mail_sent === null ? [] : ['employer_sent' => $mail_sent]));
+    return ['ok' => true, 'mail_sent' => $mail_sent];
 }

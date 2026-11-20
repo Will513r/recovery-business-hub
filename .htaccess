@@ -10,7 +10,7 @@ RewriteEngine On
     Require all denied
 </FilesMatch>
 RewriteRule ^sql/ - [F,L]
-<FilesMatch "^(jobs|cards)-lib\.php$">
+<FilesMatch "^(jobs|cards|admin)-lib\.php$">
     Require all denied
 </FilesMatch>
 

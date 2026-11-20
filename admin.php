@@ -4,6 +4,7 @@
 require_once 'config.php';
 require_once 'jobs-lib.php';
 require_once 'cards-lib.php';
+require_once 'admin-lib.php';
 // --- SECURE PASSWORD HASH ---
 // Lives in .env (ADMIN_PASSWORD_HASH) so the hash never sits in a public repo.
 // Generate one with: php -r "echo password_hash('yourpassword', PASSWORD_DEFAULT);"
@@ -46,30 +47,9 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_
         rbh_admin_job_action($conn, $action, (int) ($_POST['job_id'] ?? 0));
         header('Location: admin.php?view=jobs');
         exit;
-    } elseif ($action === 'approve' || $action === 'reject') {
-        $new_status = $action === 'approve' ? 'approved' : 'rejected';
-        $stmt = $conn->prepare("UPDATE businesses SET status = ? WHERE id = ?");
-        $stmt->bind_param("si", $new_status, $business_id);
-        $stmt->execute();
-        $stmt->close();
-
-        // Let the owner know their listing status changed (skipped if no email on file)
-        $stmt = $conn->prepare("SELECT name, slug, email FROM businesses WHERE id = ?");
-        $stmt->bind_param("i", $business_id);
-        $stmt->execute();
-        $owner = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        if ($owner && filter_var($owner['email'], FILTER_VALIDATE_EMAIL)) {
-            $safe_name = str_replace(["\r", "\n"], '', $owner['name']);
-            if ($new_status === 'approved') {
-                $subject = 'Your listing is live on Recovery Business Hub';
-                $body = "Good news! Your listing for $safe_name was approved and is now live.\n\nView it here: https://www.recoverybusinesshub.com/business/{$owner['slug']}/\n\nQuestions? Just reply to this email.";
-            } else {
-                $subject = 'Update on your Recovery Business Hub application';
-                $body = "Thanks for applying to list $safe_name on Recovery Business Hub.\n\nWe weren't able to approve the listing as submitted. Reply to this email if you'd like details or want to resubmit.";
-            }
-            rbh_send_email($owner['email'], $subject, $body);
-        }
+    } elseif (in_array($action, ['approve', 'reject', 'verify', 'unverify'], true)) {
+        // Shared with api/admin.php (admin-lib.php)
+        rbh_admin_business_action($conn, $action, $business_id);
     } elseif ($action === 'delete_review') {
         $review_id = (int) ($_POST['review_id'] ?? 0);
         $stmt = $conn->prepare("DELETE FROM reviews WHERE id = ?");
@@ -95,16 +75,6 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_
         if (!empty($logo_to_delete) && strpos($logo_to_delete, 'uploads/') === 0 && file_exists($logo_to_delete)) {
             unlink($logo_to_delete);
         }
-    } elseif ($action === 'verify') {
-        $stmt = $conn->prepare("UPDATE businesses SET is_verified = 1 WHERE id = ?");
-        $stmt->bind_param("i", $business_id);
-        $stmt->execute();
-        $stmt->close();
-    } elseif ($action === 'unverify') {
-        $stmt = $conn->prepare("UPDATE businesses SET is_verified = 0 WHERE id = ?");
-        $stmt->bind_param("i", $business_id);
-        $stmt->execute();
-        $stmt->close();
     }
 }
 
