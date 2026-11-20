@@ -320,6 +320,13 @@ include 'header.php';
                         <?php endif; ?>
                     </div>
 
+                    <p><strong>Owner:</strong> <?php
+                        $owner_nm = trim((string)($row['owner_name'] ?? ''));
+                        echo $owner_nm !== '' ? htmlspecialchars($owner_nm) : 'Not given (listed before owner details were required)';
+                        if (!empty($row['owner_confirmed_at'])) {
+                            echo ' &middot; ticked "I own it and I&rsquo;m in recovery" ' .htmlspecialchars(substr((string)$row['owner_confirmed_at'], 0, 10));
+                        }
+                    ?></p>
                     <p><strong>Category:</strong> <?php echo htmlspecialchars($row['category']); ?></p>
                     <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
                     <p><strong>Phone:</strong> <?php echo htmlspecialchars($row['phone']); ?></p>

@@ -91,6 +91,8 @@ function api_business(array $b): array
         'has_logo'      => trim((string)$b['logo']) !== '',
         'has_phone'     => trim((string)$b['phone']) !== '',
         'has_email'     => filter_var($b['email'], FILTER_VALIDATE_EMAIL) !== false,
+        'owner_name'    => (string)($b['owner_name'] ?? ''),                 // private, for review only
+        'owner_confirmed_at' => $b['owner_confirmed_at'] ?? null,            // ticked "I own it and I'm in recovery"
         'created_at'    => $b['created_at'],
         'public_url'    => RBH_SITE_URL . '/business/' . $b['slug'] . '/',
     ];
