@@ -86,7 +86,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // SERVER-SIDE VALIDATION: Email and Website
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL) ? trim($_POST['email']) : '';
-    $website = filter_var($_POST['website'] ?? '', FILTER_VALIDATE_URL) ? $_POST['website'] : '';
+    // Forgiving website: "splashleak.com" works, we add https:// for them.
+    $website_raw = trim($_POST['website'] ?? '');
+    if ($website_raw !== '' && !preg_match('#^https?://#i', $website_raw)) {
+        $website_raw = 'https://' . $website_raw;
+    }
+    $website = filter_var($website_raw, FILTER_VALIDATE_URL) ? $website_raw : '';
 
     $description = trim($_POST['description'] ?? '');
     $founder_story = trim($_POST['founder_story'] ?? '');
@@ -171,7 +176,7 @@ $old = function (string $key): string {
 };
 $old_cats = (isset($_POST['categories']) && is_array($_POST['categories'])) ? $_POST['categories'] : [];
 $more_open = false;
-foreach (['address', 'city', 'state', 'phone', 'website', 'founder_story'] as $k) {
+foreach (['address', 'city', 'state', 'phone', 'founder_story'] as $k) {
     if (trim((string)($_POST[$k] ?? '')) !== '') {
         $more_open = true;
     }
@@ -209,6 +214,18 @@ include 'header.php';
             <label for="description">What you do *</label>
             <textarea id="description" name="description" rows="3" required minlength="30" maxlength="3000" placeholder="What you do, who you do it for, and where. A sentence or two is plenty."><?php echo $old('description'); ?></textarea>
             <?php if (isset($field_errors['description'])): ?><span class="field-error"><?php echo htmlspecialchars($field_errors['description']); ?></span><?php endif; ?>
+        </div>
+
+        <div class="form-group">
+            <label for="website">Website (optional)</label>
+            <input type="text" inputmode="url" autocomplete="url" id="website" name="website" maxlength="200" placeholder="e.g. yourbusiness.com" value="<?php echo $old('website'); ?>">
+            <small>It shows as a button on your listing. No website yet? <a href="https://techdadmedia.com/?utm_source=recoverybusinesshub&amp;utm_medium=referral&amp;utm_campaign=add-business" target="_blank" rel="noopener">Tech Dad Media</a> builds them for small businesses, and the founder's in recovery too.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="logo_file">Logo (optional)</label>
+            <input type="file" id="logo_file" name="logo_file" accept=".jpg,.jpeg,.png,.webp">
+            <small>A logo makes your listing stand out. JPG, PNG or WEBP, up to 2MB. A photo of you or your work is fine too.</small>
         </div>
 
         <div class="form-group<?php echo isset($field_errors['owner_name']) ? ' has-error' : ''; ?>">
@@ -278,17 +295,6 @@ include 'header.php';
                 <small>It shows on your listing so customers can call.</small>
             </div>
 
-            <div class="form-group">
-                <label for="website">Website</label>
-                <input type="url" id="website" name="website" placeholder="https://yourbusiness.com" value="<?php echo $old('website'); ?>">
-                <small>It shows as a button on your listing.</small>
-            </div>
-
-            <div class="form-group">
-                <label for="logo_file">Logo or photo</label>
-                <input type="file" id="logo_file" name="logo_file" accept=".jpg,.jpeg,.png,.webp">
-                <small>JPG, PNG or WEBP, up to 2MB.</small>
-            </div>
 
             <div class="form-group">
                 <span class="form-label">Hours</span>
