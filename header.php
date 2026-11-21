@@ -39,7 +39,7 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css?v=<?php echo (int) @filemtime(__DIR__ . '/style.css'); ?>">
     <link rel="canonical" href="<?php echo $current_url; ?>">
 
     <script defer src="/script.js"></script>

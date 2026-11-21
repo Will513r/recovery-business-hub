@@ -1086,6 +1086,8 @@ footer :focus-visible { outline-color: var(--concrete); }
 @media (min-width: 769px) {
   .logo svg { width: 250px; }
   .card-grid { grid-template-columns: repeat(2, 1fr); }
+  .tag-card__top .biz-logo,
+  .tag-card__top .logo-placeholder { width: 64px; height: 64px; }
   .how-grid { grid-template-columns: repeat(2, 1fr); }
   .how-block { padding: 1.75rem; }
   .profile-main { padding: 2rem; }
@@ -1117,9 +1119,7 @@ footer :focus-visible { outline-color: var(--concrete); }
   .directory-container .card-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (min-width: 1280px) {
-  .directory-container .card-grid { grid-template-columns: repeat(3, 1fr); }
-}
+/* Directory stays 2 across on desktop: 3 next to the filter squeezed names to 4 lines. */
 
 @media (max-width: 899px) {
   .filters .filters__head { margin-bottom: 0; }
