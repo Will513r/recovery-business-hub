@@ -99,6 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Owner details (2026-11): private, never shown on the site.
     $owner_name = trim(preg_replace('/\s+/', ' ', (string)($_POST['owner_name'] ?? '')));
     $owner_confirm = ($_POST['owner_confirm'] ?? '') === '1';
+    $wants_tdm = ($_POST['wants_tdm'] ?? '') === '1'; // opt-in only: Tech Dad Media reaches out about a website
 
     // Business Hours Processing
     $hours_json = parse_hours_post();
@@ -154,7 +155,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $to = 'recoverybusinesshub@gmail.com';
                 $subject = 'New Business Application: ' . $safe_name_for_email;
                 $email_body = "A new business applied.\n\nBusiness: $safe_name_for_email\nOwner: $safe_owner_for_email\nOwner ticked \"I own this business and I'm in recovery\": yes\n\nLogin to approve: https://www.recoverybusinesshub.com/admin.php";
+                $email_body .= "
+Wants Tech Dad Media to reach out about a website: " . ($wants_tdm ? 'YES' : 'no');
                 rbh_send_email($to, $subject, $email_body, $email);
+
+                // Opt-in lead for Tech Dad Media. Only sent when the owner ticked the box.
+                if ($wants_tdm) {
+                    $safe_phone = str_replace(["", "
+"], '', $phone);
+                    $safe_place = trim(str_replace(["", "
+"], '', $city . ', ' . $state), ', ');
+                    $lead_body = "Asked for Tech Dad Media to reach out about getting online.
+
+"
+                        . "Business: $safe_name_for_email
+Owner: $safe_owner_for_email
+Email: $email
+"
+                        . "Phone: " . ($safe_phone !== '' ? $safe_phone : 'not given') . "
+"
+                        . "Where: " . ($safe_place !== '' ? $safe_place : 'not given') . "
+"
+                        . "Website they gave: " . ($website !== '' ? $website : 'none') . "
+
+"
+                        . "They ticked the box on the Recovery Business Hub listing form. Recovery status is private, don't mention how you found them beyond the directory.";
+                    rbh_send_email($to, 'TDM lead: ' . $safe_name_for_email . ' wants help getting online', $lead_body, $email);
+                }
 
                 $submitted = true;
                 $message = "<p class='form-note form-note--success'>Got it. We read every listing before it goes up, and we'll email you when yours is live.</p>";
@@ -219,7 +246,12 @@ include 'header.php';
         <div class="form-group">
             <label for="website">Website (optional)</label>
             <input type="text" inputmode="url" autocomplete="url" id="website" name="website" maxlength="200" placeholder="e.g. yourbusiness.com" value="<?php echo $old('website'); ?>">
-            <small>It shows as a button on your listing. No website yet? <a href="https://techdadmedia.com/?utm_source=recoverybusinesshub&amp;utm_medium=referral&amp;utm_campaign=add-business" target="_blank" rel="noopener">Tech Dad Media</a> builds them for small businesses, and the founder's in recovery too.</small>
+            <small>It shows as a button on your listing.</small>
+            <label class="form-confirm__label form-optin">
+                <input type="checkbox" name="wants_tdm" value="1"<?php echo ($_POST['wants_tdm'] ?? '') === '1' ? ' checked' : ''; ?>>
+                <span>No website yet? Tick this and <a href="https://techdadmedia.com/?utm_source=recoverybusinesshub&amp;utm_medium=referral&amp;utm_campaign=add-business" target="_blank" rel="noopener">Tech Dad Media</a> will reach out about getting your business online.</span>
+            </label>
+            <small>Optional. Your listing is free either way.</small>
         </div>
 
         <div class="form-group">
