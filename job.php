@@ -138,7 +138,7 @@ include 'header.php';
                     <textarea id="apply-message" name="message" rows="3" maxlength="1000"><?php echo rbh_h($values['message']); ?></textarea>
                 </div>
 
-                <p class="apply-form__privacy">Your info goes by email to the employer, with a copy to Recovery Business Hub. Nothing is saved on the site.</p>
+                <p class="apply-form__privacy">Your info goes by email to the employer, with a copy to Recovery Business Hub. Nothing is saved on the site. <a href="/privacy">Privacy</a>.</p>
                 <button type="submit" class="btn-primary btn-submit">Apply</button>
             </form>
             <?php echo rbh_recaptcha_js('apply-form'); ?>

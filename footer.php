@@ -9,6 +9,7 @@
                 <li><a href="/add-business">List your business</a></li>
                 <li><a href="/manage-listing">Manage your listing</a></li>
                 <li><a href="/about">About</a></li>
+                <li><a href="/privacy">Privacy</a></li>
                 <li><a href="mailto:recoverybusinesshub@gmail.com">recoverybusinesshub@gmail.com</a></li>
             </ul>
         </div>

@@ -161,9 +161,11 @@ Wants Tech Dad Media to reach out about a website: " . ($wants_tdm ? 'YES' : 'no
 
                 // Opt-in lead for Tech Dad Media. Only sent when the owner ticked the box.
                 if ($wants_tdm) {
-                    $safe_phone = str_replace(["", "
+                    $safe_phone = str_replace(["
+", "
 "], '', $phone);
-                    $safe_place = trim(str_replace(["", "
+                    $safe_place = trim(str_replace(["
+", "
 "], '', $city . ', ' . $state), ', ');
                     $lead_body = "Asked for Tech Dad Media to reach out about getting online.
 
@@ -221,7 +223,7 @@ include 'header.php';
 
 <main class="form-container">
     <h1>List your business</h1>
-    <p>Free, and only for businesses owned by someone in recovery. The first part takes about a minute. Your name and email stay with us. Only your business details show on the site, and only what you give us.</p>
+    <p>Free, and only for businesses owned by someone in recovery. The first part takes about a minute. Your name and email stay with us. Only your business details show on the site, and only what you give us. <a href="/privacy">Privacy</a>.</p>
 
     <?php echo $message; ?>
 

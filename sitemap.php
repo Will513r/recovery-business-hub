@@ -20,6 +20,7 @@ $static_pages = [
     '/businesses',
     '/post-job',
     '/about',
+    '/privacy',
     '/add-business'
 ];
 
