@@ -108,16 +108,27 @@ if ($business && !empty($business['hours'])) {
 $schema_json = '';
 
 if ($business) {
-    // Safely parse category JSON with fallback
-    $cat_list = json_decode($business['category'], true) ?? [];
-    if (empty($cat_list) && !empty($business['category'])) {
-        $cat_list = [$business['category']]; // Fallback for old simple strings
+    // Clean category list (never the literal "[]" for an empty one)
+    $cat_list = rbh_business_categories($business);
+
+    // Thin profiles stay out of Google until the owner fills them in (S6). Same rule as the sitemap.
+    if (!rbh_profile_indexable($business)) {
+        $robots_directive = 'noindex, follow';
     }
 
-    // Set dynamic SEO Title and Description
-    $page_title       = $business['name'];
-    $cat_string       = isset($cat_list[0]) ? $cat_list[0] : 'Business';
-    $page_description = $cat_string . ': ' . mb_strimwidth(strip_tags($business['description']), 0, 155, '...');
+    // Title and description built only from facts on the page (C8): name, first trade, place.
+    $place_bits = array_filter([trim((string)$business['city']), trim((string)$business['state'])], 'strlen');
+    $place_text = implode(', ', $place_bits);
+    $page_title = $business['name'];
+    if (isset($cat_list[0]) && $place_text !== '') {
+        $page_title .= ': ' . $cat_list[0] . ' in ' . $place_text;
+    } elseif (isset($cat_list[0])) {
+        $page_title .= ': ' . $cat_list[0];
+    } elseif ($place_text !== '') {
+        $page_title .= ', ' . $place_text;
+    }
+    $desc_text        = mb_strimwidth(trim(strip_tags($business['description'])), 0, 155, '...');
+    $page_description = isset($cat_list[0]) ? $cat_list[0] . ': ' . $desc_text : $desc_text;
 
     // Set dynamic SEO Image to the Business Logo
     if (!empty($business['logo'])) {
@@ -131,19 +142,21 @@ if ($business) {
         "name" => $business['name'],
         "image" => !empty($business['logo']) ? "https://www.recoverybusinesshub.com/" . ltrim($business['logo'], '/') : "https://www.recoverybusinesshub.com/logo-keytag.png",
         "description" => strip_tags($business['description']),
-        "telephone" => $business['phone'],
         "url" => !empty($business['website']) ? $business['website'] : "https://www.recoverybusinesshub.com/business/" . $business['slug'] . "/"
     ];
+    // Only fields that are really on the page (B11). No empty phone or address strings.
+    if (trim((string)$business['phone']) !== '') {
+        $local_business_schema["telephone"] = $business['phone'];
+    }
 
     // Add Address to Schema if available
     if (!empty($business['address']) || !empty($business['city']) || !empty($business['state'])) {
-        $local_business_schema["address"] = [
-            "@type" => "PostalAddress",
-            "streetAddress" => $business['address'] ?? "",
-            "addressLocality" => $business['city'] ?? "",
-            "addressRegion" => $business['state'] ?? "",
-            "addressCountry" => "US"
-        ];
+        $addr = ["@type" => "PostalAddress"];
+        if (trim((string)$business['address']) !== '') $addr["streetAddress"] = $business['address'];
+        if (trim((string)$business['city']) !== '')    $addr["addressLocality"] = $business['city'];
+        if (trim((string)$business['state']) !== '')   $addr["addressRegion"] = $business['state'];
+        $addr["addressCountry"] = "US";
+        $local_business_schema["address"] = $addr;
     }
 
     // Add Aggregate Rating to Schema if reviews exist
@@ -178,12 +191,27 @@ if ($business) {
     // Combine both schemas into an array and convert to JSON string for the header
     $schema_json = json_encode([$local_business_schema, $breadcrumb_schema], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } else {
+    // A missing or unapproved listing is a real 404, not a 200 "not found" page (B6).
+    http_response_code(404);
     $page_title       = 'Business not found';
     $page_description = 'This listing may be pending review or has been taken down.';
 }
 
 // Open jobs for this business (shown on the profile)
 $open_jobs = $business ? rbh_business_jobs($conn, (int)$business_id) : [];
+
+// Links to a few other listings, so every profile has links in and out.
+$more_businesses = [];
+if ($business) {
+    $all_rows = [];
+    $all_res = $conn->query("SELECT id, name, slug, category, city, state, phone, website, founder_story FROM businesses WHERE status = 'approved' ORDER BY id LIMIT 500");
+    if ($all_res) {
+        while ($r = $all_res->fetch_assoc()) {
+            $all_rows[] = $r;
+        }
+    }
+    $more_businesses = rbh_more_businesses($all_rows, (int)$business_id, 3);
+}
 
 // -------------------------------
 include 'header.php';
@@ -418,6 +446,23 @@ include 'header.php';
                 </div>
             </div>
         </article>
+
+        <?php if ($more_businesses): ?>
+            <section class="more-businesses" aria-labelledby="more-biz-h">
+                <h2 id="more-biz-h">More recovery-owned businesses</h2>
+                <ul>
+                    <?php foreach ($more_businesses as $mb): ?>
+                        <?php
+                        $mb_cats  = rbh_business_categories($mb);
+                        $mb_place = implode(', ', array_filter([trim((string)$mb['city']), trim((string)$mb['state'])], 'strlen'));
+                        $mb_meta  = trim(($mb_cats[0] ?? '') . ($mb_cats && $mb_place !== '' ? ' in ' : '') . $mb_place);
+                        ?>
+                        <li><a href="/business/<?php echo rbh_h((string)$mb['slug']); ?>/"><?php echo rbh_h((string)$mb['name']); ?></a><?php echo $mb_meta !== '' ? ' <span class="tag-card__meta">' . rbh_h($mb_meta) . '</span>' : ''; ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <p><a href="/businesses">See the full list</a></p>
+            </section>
+        <?php endif; ?>
 
     <?php else: ?>
         <div class="empty-state empty-state--center">

@@ -108,6 +108,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
 $admin_search = isset($_GET['q']) ? trim($_GET['q']) : '';
 $admin_status = isset($_GET['status_filter']) ? $_GET['status_filter'] : '';
 
+$robots_directive = 'noindex, nofollow';
 $page_title = 'Admin Dashboard';
 include 'header.php';
 ?>

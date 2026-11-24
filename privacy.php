@@ -1,6 +1,7 @@
 <?php
 // privacy.php
 require_once 'config.php';
+$robots_directive = 'noindex, follow'; // legal page, no search value (S6)
 $page_title       = 'Privacy';
 $page_description = 'What Recovery Business Hub collects, what shows on the site, what stays private, and how to get your info removed.';
 include 'header.php';

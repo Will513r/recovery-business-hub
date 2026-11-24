@@ -8,6 +8,69 @@ function rbh_h(string $s): string
     return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 }
 
+// Category names for one business row. The category column is JSON ('["A","B"]'), an old plain
+// string, or empty / '[]'. Always returns a clean list, never the literal text "[]".
+function rbh_business_categories(array $b): array
+{
+    $raw = trim((string)($b['category'] ?? ''));
+    if ($raw === '' || $raw === '[]') {
+        return [];
+    }
+    $cats = json_decode($raw, true);
+    if (!is_array($cats)) {
+        $cats = [$raw];
+    }
+    return array_values(array_filter(array_map('trim', array_map('strval', $cats)), 'strlen'));
+}
+
+// Is this profile worth Google's time? One rule, used by the page (robots meta), the sitemap and
+// the "more businesses" links, so they never disagree (B15, S6).
+// Yes when the owner wrote their story, or the listing has the real basics: a place, a trade and
+// a way to reach them. Anything thinner stays noindex until it is filled in.
+function rbh_profile_indexable(array $b): bool
+{
+    if (trim((string)($b['founder_story'] ?? '')) !== '') {
+        return true;
+    }
+    $has_place   = trim((string)($b['city'] ?? '')) !== '' && trim((string)($b['state'] ?? '')) !== '';
+    $has_trade   = count(rbh_business_categories($b)) > 0;
+    $has_contact = trim((string)($b['phone'] ?? '')) !== '' || trim((string)($b['website'] ?? '')) !== '';
+    return $has_place && $has_trade && $has_contact;
+}
+
+// Up to $n other indexable profiles to link from a profile page, in a ring by id so every
+// profile gets the same number of links in. $all is every approved business row.
+function rbh_more_businesses(array $all, int $current_id, int $n = 3): array
+{
+    $pool = [];
+    foreach ($all as $row) {
+        if (rbh_profile_indexable($row) || (int)$row['id'] === $current_id) {
+            $pool[] = $row;
+        }
+    }
+    usort($pool, fn($a, $b) => (int)$a['id'] <=> (int)$b['id']);
+    $pos = null;
+    foreach ($pool as $i => $row) {
+        if ((int)$row['id'] === $current_id) {
+            $pos = $i;
+            break;
+        }
+    }
+    $out = [];
+    $count = count($pool);
+    if ($count < 2) {
+        return $out;
+    }
+    $start = $pos === null ? 0 : $pos + 1;
+    for ($k = 0; $k < $count && count($out) < $n; $k++) {
+        $row = $pool[($start + $k) % $count];
+        if ((int)$row['id'] !== $current_id) {
+            $out[] = $row;
+        }
+    }
+    return $out;
+}
+
 // A business card. $hiring is the array from rbh_hiring_business_ids() (ids as keys).
 // $b may carry avg_rating and review_count when the query joined reviews.
 function rbh_business_card(array $b, array $hiring = []): string

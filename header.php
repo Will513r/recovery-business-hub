@@ -8,8 +8,36 @@ $default_image_url = "https://www.recoverybusinesshub.com/og-share.png";
 // 2. If a specific page (like profile.php) provided an image, use it. Otherwise, use default.
 $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
 
-// 3. Define the current URL for canonical and og:url tags
-$current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?'));
+// 3. Canonical URL. One form per page: detail pages (/business/x/, /jobs/x/) end in a slash,
+// every other page has none, and /index.php is the home page. Query strings never count.
+$canon_path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+if ($canon_path === '' || $canon_path === '/index.php') {
+    $canon_path = '/';
+} elseif (preg_match('#^/(business|jobs)/[^/]+/?$#', $canon_path)) {
+    $canon_path = rtrim($canon_path, '/') . '/';
+} else {
+    $canon_path = rtrim($canon_path, '/');
+}
+$current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars($canon_path);
+
+// 4. Robots. A page sets $robots_directive before including this file (e.g. 'noindex, follow').
+// Search and filter URLs are never worth indexing. Missing pages (404) and the admin and
+// owner-only pages are kept out too. Do NOT also block these in robots.txt (B2).
+$robots_directive = isset($robots_directive) ? (string) $robots_directive : '';
+if ($robots_directive === '') {
+    foreach (['search', 'category', 'state', 'area', 'kind', 'page'] as $rbh_k) {
+        if (isset($_GET[$rbh_k])) {
+            $robots_directive = 'noindex, follow';
+            break;
+        }
+    }
+}
+if ($robots_directive === '' && http_response_code() === 404) {
+    $robots_directive = 'noindex, follow';
+}
+if ($robots_directive !== '' && !headers_sent()) {
+    header('X-Robots-Tag: ' . $robots_directive);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,6 +47,9 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $seo_title; ?></title>
     <meta name="description" content="<?php echo $seo_description; ?>">
+    <?php if ($robots_directive !== ''): ?>
+    <meta name="robots" content="<?php echo htmlspecialchars($robots_directive); ?>">
+    <?php endif; ?>
 
     <meta property="og:title" content="<?php echo $seo_title; ?>">
     <meta property="og:description" content="<?php echo $seo_description; ?>">
@@ -40,7 +71,9 @@ $current_url = "https://www.recoverybusinesshub.com" . htmlspecialchars(strtok($
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
     <link rel="stylesheet" href="/style.css?v=<?php echo (int) @filemtime(__DIR__ . '/style.css'); ?>">
+    <?php if ($robots_directive === '' || strpos($robots_directive, 'noindex') === false): ?>
     <link rel="canonical" href="<?php echo $current_url; ?>">
+    <?php endif; ?>
 
     <script defer src="/script.js"></script>
 

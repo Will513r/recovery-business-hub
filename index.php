@@ -10,7 +10,7 @@ $new_jobs   = rbh_open_jobs($conn, '', '', 3);
 $hiring_ids = rbh_hiring_business_ids($conn);
 
 $biz_rows = [];
-$biz_res = $conn->query("SELECT * FROM businesses WHERE status = 'approved' ORDER BY is_verified DESC, created_at DESC LIMIT 6");
+$biz_res = $conn->query("SELECT * FROM businesses WHERE status = 'approved' ORDER BY is_verified DESC, created_at DESC LIMIT 12");
 if ($biz_res) {
     while ($row = $biz_res->fetch_assoc()) {
         $biz_rows[] = $row;
@@ -142,6 +142,7 @@ include 'header.php';
                 <a href="/add-business" class="btn-secondary">List your business</a>
             </div>
         </div>
+        <p class="more-link"><a class="link" href="/about"><strong>Why we built this</strong></a></p>
     </div>
 </section>
 

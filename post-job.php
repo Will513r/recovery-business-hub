@@ -26,6 +26,7 @@ $policy_help = [
     'case_by_case' => 'You run one, and you look at what it shows and when it happened before deciding.',
 ];
 
+$robots_directive = 'noindex, follow'; // a form, no search value (S6)
 $page_title       = 'Post a job';
 $page_description = 'Post a job on Recovery Business Hub. Free. Tell people your background check policy up front. Every post is checked by hand before it goes up.';
 include 'header.php';

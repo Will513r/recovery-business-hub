@@ -15,6 +15,13 @@ RewriteRule ^add-business\.php$ https://www.recoverybusinesshub.com/add-business
     Require all denied
 </FilesMatch>
 
+# 0.05 One URL per page (B4): static pages have no trailing slash, detail pages have one.
+# The canonical tag in header.php uses the same forms.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(about|jobs|businesses|privacy|post-job|add-business|manage-listing)/$ /$1 [R=301,L]
+RewriteRule ^business/([a-zA-Z0-9-]+)$ /business/$1/ [R=301,L]
+RewriteRule ^jobs/([a-z0-9-]+)$ /jobs/$1/ [R=301,L]
+
 # 0.1 Block repo docs, SQL and build notes (CLAUDE.md, art-direction.md, sql/)
 <FilesMatch "\.(md|sql|log|jsonl)$">
     Require all denied

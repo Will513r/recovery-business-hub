@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $message = "<p class='form-note form-note--success'>If that email is on a listing, an edit link is on its way. Check your inbox and your spam folder.</p>";
 }
 
+$robots_directive = 'noindex, nofollow'; // owner-only
 $page_title       = 'Manage your listing';
 $page_description = 'Update your Recovery Business Hub listing. Enter the email on your listing and we\'ll send you an edit link.';
 include 'header.php';

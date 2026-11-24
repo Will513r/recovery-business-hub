@@ -87,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
+$robots_directive = 'noindex, nofollow'; // admin only
 include 'header.php';
 ?>
 

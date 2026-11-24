@@ -214,6 +214,7 @@ if ($old_cats) {
     $more_open = true;
 }
 
+$robots_directive = 'noindex, follow'; // a form, no search value (S6)
 $page_title       = 'List your business';
 $page_description = 'List your recovery-owned business on Recovery Business Hub. It is free, and you choose how much of your story to share.';
 include 'header.php';

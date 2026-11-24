@@ -17,6 +17,12 @@ $has_filters = $area !== '' || $kind !== '';
 
 $jobs = rbh_open_jobs($conn, $area, $kind);
 
+// No open jobs means an empty page. Keep it out of Google until the first job is live (S6);
+// it flips to indexable by itself the day a job is approved.
+if (!$jobs) {
+    $robots_directive = 'noindex, follow';
+}
+
 $page_title       = 'Second-chance jobs in Cincinnati, Dayton and Northern Kentucky';
 $page_description = 'Jobs from employers who say up front whether they run a background check. Cincinnati, Dayton and Northern Kentucky. No account. Applying is an email to the employer.';
 include 'header.php';

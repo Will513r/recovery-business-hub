@@ -20,6 +20,7 @@ if (preg_match('/^[a-f0-9]{64}$/', $token)) {
 }
 
 if (!$business) {
+    $robots_directive = 'noindex, nofollow';
     $page_title = 'Link expired';
     include 'header.php';
     echo "<main class='form-container'>
@@ -103,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$robots_directive = 'noindex, nofollow';
 $page_title = 'Edit your listing';
 include 'header.php';
 ?>

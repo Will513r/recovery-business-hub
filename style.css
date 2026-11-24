@@ -1245,3 +1245,10 @@ footer :focus-visible { outline-color: var(--concrete); }
 }
 .form-more[open] > summary { margin-bottom: 0.5rem; }
 .form-more__note { color: var(--muted); font-size: 0.95rem; margin: 0 0 1rem; }
+
+/* Profile: links to other listings */
+.more-businesses { max-width: 1100px; margin: 2rem auto 0; padding: 0 1rem; }
+.more-businesses h2 { font-size: 1.25rem; margin: 0 0 0.75rem; }
+.more-businesses ul { list-style: none; margin: 0 0 0.75rem; padding: 0; }
+.more-businesses li { padding: 0.35rem 0; }
+.more-businesses li a { font-weight: 700; }

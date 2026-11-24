@@ -2,6 +2,7 @@
 // sitemap.php
 require_once 'config.php';
 require_once 'jobs-lib.php';
+require_once 'cards-lib.php';
 
 // Tell the browser and search engines that this is an XML file, not HTML
 header("Content-Type: application/xml; charset=utf-8");
@@ -13,15 +14,12 @@ $base_url = "https://www.recoverybusinesshub.com";
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
-// 1. Static core pages
+// 1. Static core pages. Only pages Google should index (B15, S6): the forms and the privacy
+// page are noindex, and /jobs is added below only while at least one job is open.
 $static_pages = [
     '/',
-    '/jobs',
     '/businesses',
-    '/post-job',
-    '/about',
-    '/privacy',
-    '/add-business'
+    '/about'
 ];
 
 // Real dates. Static pages take the date their own file last changed in git
@@ -33,14 +31,20 @@ $file_dates = is_file(__DIR__ . '/sitemap-lastmod.php') ? (require __DIR__ . '/s
 // Approved businesses and open jobs, read first so the list pages can take the date
 // of the newest listing they show.
 $businesses = [];
-$sql = "SELECT slug, created_at FROM businesses WHERE status = 'approved' ORDER BY created_at DESC";
+$sql = "SELECT * FROM businesses WHERE status = 'approved' ORDER BY created_at DESC";
 $result = $conn->query($sql);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $businesses[] = $row;
+        // Thin profiles are noindex on the page, so they stay out of the sitemap too.
+        if (rbh_profile_indexable($row)) {
+            $businesses[] = $row;
+        }
     }
 }
 $jobs = rbh_open_jobs($conn, '', '', 500);
+if ($jobs) {
+    array_splice($static_pages, 1, 0, ['/jobs']);
+}
 
 $newest_business = null;
 foreach ($businesses as $row) {
