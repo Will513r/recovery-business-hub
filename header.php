@@ -11,7 +11,7 @@ $og_image_url = isset($seo_image) ? $seo_image : $default_image_url;
 // 3. Canonical URL. One form per page: detail pages (/business/x/, /jobs/x/) end in a slash,
 // every other page has none, and /index.php is the home page. Query strings never count.
 $canon_path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
-if ($canon_path === '' || $canon_path === '/index.php') {
+if ($canon_path === '' || $canon_path === '/' || $canon_path === '/index.php') {
     $canon_path = '/';
 } elseif (preg_match('#^/(business|jobs)/[^/]+/?$#', $canon_path)) {
     $canon_path = rtrim($canon_path, '/') . '/';
