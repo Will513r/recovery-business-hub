@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# 0.0 One host: bare domain 301s to www (canonical, sitemap and links all use www), 2026-11-24
+RewriteCond %{HTTP_HOST} ^recoverybusinesshub.com$ [NC]
+RewriteRule ^(.*)$ https://www.recoverybusinesshub.com/$1 [R=301,L]
+
 # 0. Block access to dotfiles (.env holds DB credentials and API secrets)
 <FilesMatch "^\.">
     Require all denied
