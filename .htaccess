@@ -4,6 +4,12 @@ RewriteEngine On
 RewriteCond %{HTTP_HOST} ^recoverybusinesshub.com$ [NC]
 RewriteRule ^(.*)$ https://www.recoverybusinesshub.com/$1 [R=301,L]
 
+# 0.05 Direct .php hits for home and the listing form 301 to the clean URL (GSC flagged /index.php and /add-business.php?plan=free as duplicates), 2026-11-24
+RewriteCond %{THE_REQUEST} \s/+index\.php[\s?] [NC]
+RewriteRule ^index\.php$ https://www.recoverybusinesshub.com/? [R=301,L]
+RewriteCond %{THE_REQUEST} \s/+add-business\.php[\s?] [NC]
+RewriteRule ^add-business\.php$ https://www.recoverybusinesshub.com/add-business? [R=301,L]
+
 # 0. Block access to dotfiles (.env holds DB credentials and API secrets)
 <FilesMatch "^\.">
     Require all denied
